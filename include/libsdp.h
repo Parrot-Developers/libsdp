@@ -56,12 +56,38 @@ enum sdp_media_type {
 };
 
 
+enum sdp_rtcp_xr_rtt_report_mode {
+	SDP_RTCP_XR_RTT_REPORT_NONE = 0,
+	SDP_RTCP_XR_RTT_REPORT_ALL,
+	SDP_RTCP_XR_RTT_REPORT_SENDER,
+};
+
+
 struct sdp_attr {
 	char *key;
 	char *value;
 
 	struct sdp_attr *prev;
 	struct sdp_attr *next;
+};
+
+
+/* RFC 3611 and RFC 7005 RTCP extended reports */
+struct sdp_rtcp_xr {
+	int lossRleReport;
+	unsigned int lossRleReportMaxSize;
+	int dupRleReport;
+	unsigned int dupRleReportMaxSize;
+	int pktReceiptTimesReport;
+	unsigned int pktReceiptTimesReportMaxSize;
+	enum sdp_rtcp_xr_rtt_report_mode rttReport;
+	unsigned int rttReportMaxSize;
+	int statsSummaryReportLoss;
+	int statsSummaryReportDup;
+	int statsSummaryReportJitter;
+	int statsSummaryReportTtl;
+	int statsSummaryReportHl;
+	int djbMetricsReport;
 };
 
 
@@ -73,9 +99,14 @@ struct sdp_media {
 	unsigned int dstStreamPort;
 	unsigned int dstControlPort;
 	unsigned int payloadType;
+
+	/* RTP/AVP rtpmap attribute */
 	char *encodingName;
 	char *encodingParams;
 	unsigned int clockRate;
+
+	struct sdp_rtcp_xr rtcpXr;
+
 	unsigned int attrCount;
 	struct sdp_attr *attr;
 
@@ -95,6 +126,7 @@ struct sdp_session {
 	char *phone;
 	char *connectionAddr;
 	int isMulticast;
+	struct sdp_rtcp_xr rtcpXr;
 	unsigned int attrCount;
 	struct sdp_attr *attr;
 	unsigned int mediaCount;

@@ -41,14 +41,34 @@
 
 #define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
 #define SDP_ATTR_RTCP_PORT "rtcp"
+#define SDP_ATTR_RTCP_XR "rtcp-xr"
+#define SDP_ATTR_RTCP_XR_LOSS_RLE "pkt-loss-rle"
+#define SDP_ATTR_RTCP_XR_DUP_RLE "pkt-dup-rle"
+#define SDP_ATTR_RTCP_XR_RCPT_TIMES "pkt-rcpt-times"
+#define SDP_ATTR_RTCP_XR_RCVR_RTT "rcvr-rtt"
+#define SDP_ATTR_RTCP_XR_STAT_SUMMARY "stat-summary"
+#define SDP_ATTR_RTCP_XR_STAT_LOSS "loss"
+#define SDP_ATTR_RTCP_XR_STAT_DUP "dup"
+#define SDP_ATTR_RTCP_XR_STAT_JITT "jitt"
+#define SDP_ATTR_RTCP_XR_STAT_TTL "TTL"
+#define SDP_ATTR_RTCP_XR_STAT_HL "HL"
+#define SDP_ATTR_RTCP_XR_VOIP_METRICS "voip-metrics"
+#define SDP_ATTR_RTCP_XR_DJB_METRICS "de-jitter-buffer"
 
 
 static const char *const sdp_media_type_str[] = {
-	"audio"
-	"video"
-	"text"
-	"application"
-	"message"
+	"audio",
+	"video",
+	"text",
+	"application",
+	"message",
+};
+
+
+static const char *const sdp_rtcp_xr_rtt_report_mode_str[] = {
+	"none",
+	"all",
+	"sender",
 };
 
 
@@ -284,13 +304,229 @@ int sdp_media_remove_attr(
 }
 
 
+
+static int sdp_generate_rtcp_xr_attribute(
+	const struct sdp_rtcp_xr *xr,
+	char *sdp,
+	int sdpMaxLen)
+{
+	char xrFormat[100];
+	int xrFormatLen = 0, isFirst = 1, sdpLen = 0;
+	if (xr->lossRleReport) {
+		if (xr->lossRleReportMaxSize > 0)
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s=%d", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_LOSS_RLE,
+				xr->lossRleReportMaxSize);
+		else
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_LOSS_RLE);
+		isFirst = 0;
+	}
+	if (xr->dupRleReport) {
+		if (xr->dupRleReportMaxSize > 0)
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s=%d", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_DUP_RLE,
+				xr->dupRleReportMaxSize);
+		else
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_DUP_RLE);
+		isFirst = 0;
+	}
+	if (xr->pktReceiptTimesReport) {
+		if (xr->pktReceiptTimesReportMaxSize > 0)
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s=%d", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_RCPT_TIMES,
+				xr->pktReceiptTimesReportMaxSize);
+		else
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_RCPT_TIMES);
+		isFirst = 0;
+	}
+	if ((xr->rttReport > SDP_RTCP_XR_RTT_REPORT_NONE) &&
+		(xr->rttReport <= SDP_RTCP_XR_RTT_REPORT_SENDER)) {
+		if (xr->lossRleReportMaxSize > 0)
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s=%s:%d", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_RCVR_RTT,
+				sdp_rtcp_xr_rtt_report_mode_str[
+					xr->rttReport],
+				xr->lossRleReportMaxSize);
+		else
+			xrFormatLen += snprintf(xrFormat + xrFormatLen,
+				sizeof(xrFormat) - xrFormatLen,
+				"%s%s=%s", (isFirst) ? "" : " ",
+				SDP_ATTR_RTCP_XR_RCVR_RTT,
+				sdp_rtcp_xr_rtt_report_mode_str[
+					xr->rttReport]);
+		isFirst = 0;
+	}
+	char statFlag[100];
+	int statFlagLen = 0, isFirst2 = 1;
+	if (xr->statsSummaryReportLoss) {
+		statFlagLen += snprintf(statFlag + statFlagLen,
+			sizeof(statFlag) - statFlagLen,
+			"%s%s", (isFirst2) ? "" : ",",
+			SDP_ATTR_RTCP_XR_STAT_LOSS);
+		isFirst2 = 0;
+	}
+	if (xr->statsSummaryReportDup) {
+		statFlagLen += snprintf(statFlag + statFlagLen,
+			sizeof(statFlag) - statFlagLen,
+			"%s%s", (isFirst2) ? "" : ",",
+			SDP_ATTR_RTCP_XR_STAT_DUP);
+		isFirst2 = 0;
+	}
+	if (xr->statsSummaryReportJitter) {
+		statFlagLen += snprintf(statFlag + statFlagLen,
+			sizeof(statFlag) - statFlagLen,
+			"%s%s", (isFirst2) ? "" : ",",
+			SDP_ATTR_RTCP_XR_STAT_JITT);
+		isFirst2 = 0;
+	}
+	if (xr->statsSummaryReportTtl) {
+		statFlagLen += snprintf(statFlag + statFlagLen,
+			sizeof(statFlag) - statFlagLen,
+			"%s%s", (isFirst2) ? "" : ",",
+			SDP_ATTR_RTCP_XR_STAT_TTL);
+		isFirst2 = 0;
+	}
+	if (xr->statsSummaryReportHl) {
+		statFlagLen += snprintf(statFlag + statFlagLen,
+			sizeof(statFlag) - statFlagLen,
+			"%s%s", (isFirst2) ? "" : ",",
+			SDP_ATTR_RTCP_XR_STAT_HL);
+		isFirst2 = 0;
+	}
+	if (statFlagLen > 0) {
+		xrFormatLen += snprintf(xrFormat + xrFormatLen,
+			sizeof(xrFormat) - xrFormatLen,
+			"%s%s", (isFirst) ? "" : " ",
+			SDP_ATTR_RTCP_XR_STAT_SUMMARY);
+		isFirst = 0;
+	}
+	if (xr->djbMetricsReport) {
+		xrFormatLen += snprintf(xrFormat + xrFormatLen,
+			sizeof(xrFormat) - xrFormatLen,
+			"%s%s", (isFirst) ? "" : " ",
+			SDP_ATTR_RTCP_XR_DJB_METRICS);
+		isFirst = 0;
+	}
+	if (xrFormatLen > 0) {
+		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+			"a=%s:%s\r\n", SDP_ATTR_RTCP_XR, xrFormat);
+	}
+
+	return sdpLen;
+}
+
+
+static int sdp_parse_rtcp_xr_attribute(
+	struct sdp_rtcp_xr *xr,
+	char *attrValue)
+{
+	int ret = 0;
+	char *temp1 = NULL;
+	char *xr_format = NULL;
+
+	xr_format = strtok_r(attrValue, " ", &temp1);
+	while (xr_format) {
+		if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_LOSS_RLE,
+			strlen(SDP_ATTR_RTCP_XR_LOSS_RLE))) {
+			xr->lossRleReport = 1;
+			char *p2 = strchr(xr_format, '=');
+			if (p2 != NULL)
+				xr->lossRleReportMaxSize = atoi(p2 + 1);
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_DUP_RLE,
+			strlen(SDP_ATTR_RTCP_XR_DUP_RLE))) {
+			xr->dupRleReport = 1;
+			char *p2 = strchr(xr_format, '=');
+			if (p2 != NULL)
+				xr->dupRleReportMaxSize = atoi(p2 + 1);
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_RCPT_TIMES,
+			strlen(SDP_ATTR_RTCP_XR_RCPT_TIMES))) {
+			xr->pktReceiptTimesReport = 1;
+			char *p2 = strchr(xr_format, '=');
+			if (p2 != NULL)
+				xr->pktReceiptTimesReportMaxSize = atoi(p2 + 1);
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_RCVR_RTT,
+			strlen(SDP_ATTR_RTCP_XR_RCVR_RTT))) {
+			char *p2 = strchr(xr_format, '=');
+			if ((p2 != NULL) && (!strncmp(p2 + 1,
+				sdp_rtcp_xr_rtt_report_mode_str[1],
+				strlen(sdp_rtcp_xr_rtt_report_mode_str[1]))))
+				xr->rttReport = SDP_RTCP_XR_RTT_REPORT_ALL;
+			else if ((p2 != NULL) && (!strncmp(p2 + 1,
+				sdp_rtcp_xr_rtt_report_mode_str[1],
+				strlen(sdp_rtcp_xr_rtt_report_mode_str[1]))))
+				xr->rttReport = SDP_RTCP_XR_RTT_REPORT_SENDER;
+			else
+				xr->rttReport = SDP_RTCP_XR_RTT_REPORT_NONE;
+			p2 = strchr(xr_format, ':');
+			if (p2 != NULL)
+				xr->rttReportMaxSize = atoi(p2 + 1);
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_STAT_SUMMARY,
+			strlen(SDP_ATTR_RTCP_XR_STAT_SUMMARY))) {
+			char *p2 = strchr(xr_format, '=');
+			if (p2 == NULL)
+				continue;
+			p2++;
+			char *temp2 = NULL;
+			char *stat_flag = NULL;
+			stat_flag = strtok_r(p2, ",", &temp2);
+			while (stat_flag) {
+				if (!strncmp(stat_flag,
+					SDP_ATTR_RTCP_XR_STAT_LOSS,
+					strlen(SDP_ATTR_RTCP_XR_STAT_LOSS)))
+					xr->statsSummaryReportLoss = 1;
+				else if (!strncmp(stat_flag,
+					SDP_ATTR_RTCP_XR_STAT_DUP,
+					strlen(SDP_ATTR_RTCP_XR_STAT_DUP)))
+					xr->statsSummaryReportDup = 1;
+				else if (!strncmp(stat_flag,
+					SDP_ATTR_RTCP_XR_STAT_JITT,
+					strlen(SDP_ATTR_RTCP_XR_STAT_JITT)))
+					xr->statsSummaryReportJitter = 1;
+				else if (!strncmp(stat_flag,
+					SDP_ATTR_RTCP_XR_STAT_TTL,
+					strlen(SDP_ATTR_RTCP_XR_STAT_TTL)))
+					xr->statsSummaryReportTtl = 1;
+				else if (!strncmp(stat_flag,
+					SDP_ATTR_RTCP_XR_STAT_HL,
+					strlen(SDP_ATTR_RTCP_XR_STAT_HL)))
+					xr->statsSummaryReportHl = 1;
+				stat_flag = strtok_r(NULL, ",", &temp2);
+			}
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_DJB_METRICS,
+			strlen(SDP_ATTR_RTCP_XR_DJB_METRICS)))
+			xr->djbMetricsReport = 1;
+
+		xr_format = strtok_r(NULL, " ", &temp1);
+	};
+
+	return ret;
+}
+
+
 static int sdp_generate_media_description(
 	const struct sdp_media *media,
 	char *sdp,
 	int sdpMaxLen,
 	int sessionLevelConnectionAddr)
 {
-	int sdpLen = 0;
+	int sdpLen = 0, ret, error = 0;
 
 	if (((!media->connectionAddr) || (!strlen(media->connectionAddr))) &&
 		(!sessionLevelConnectionAddr)) {
@@ -339,20 +575,31 @@ static int sdp_generate_media_description(
 			(isMulticast) ? "/127" : "");
 	}
 
-	/* Attributes (a=<attribute>:<value> or a=<attribute>) */
+	/* RTP/AVP rtpmap attribute */
 	sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-		"a="SDP_ATTR_RTPAVP_RTPMAP":%d %s/%d%s%s\r\n",
+		"a=%s:%d %s/%d%s%s\r\n", SDP_ATTR_RTPAVP_RTPMAP,
 		media->payloadType, media->encodingName, media->clockRate,
 		((media->encodingParams) && (strlen(media->encodingParams))) ?
 			"/" : "",
 		((media->encodingParams) && (strlen(media->encodingParams))) ?
 			media->encodingParams : "");
 
+	/* RTCP destination port (if not RTP port + 1) */
 	if (media->dstControlPort != media->dstStreamPort + 1)
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"a="SDP_ATTR_RTCP_PORT":%d\r\n",
+			"a=%s:%d\r\n", SDP_ATTR_RTCP_PORT,
 			media->dstControlPort);
 
+	/* RTCP extended reports attribute */
+	ret = sdp_generate_rtcp_xr_attribute(&media->rtcpXr,
+		sdp + sdpLen, sdpMaxLen - sdpLen);
+	if (ret < 0) {
+		SDP_LOGE("sdp_generate_rtcp_xr_attribute()"
+			" failed (%d)", ret);
+		error = 1;
+	}
+
+	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 	struct sdp_attr *attr;
 	for (attr = media->attr; attr; attr = attr->next) {
 		if ((attr->key) && (strlen(attr->key))) {
@@ -367,7 +614,7 @@ static int sdp_generate_media_description(
 		}
 	}
 
-	return sdpLen;
+	return (error) ? -error : sdpLen;
 }
 
 
@@ -383,7 +630,7 @@ char *sdp_generate_session_description(
 		SDP_RETURN_VAL_IF_FAILED(0, -EINVAL, NULL);
 	}
 
-	int error = 0;
+	int error = 0, ret;
 	int sdpMaxLen = 1024, sdpLen = 0;
 	int sessionLevelConnectionAddr = 0;
 
@@ -459,7 +706,17 @@ char *sdp_generate_session_description(
 				(isMulticast) ? "/127" : "");
 		}
 
-		/* Attributes (a=<attribute>:<value> or a=<attribute>) */
+		/* RTCP extended reports attribute */
+		ret = sdp_generate_rtcp_xr_attribute(&session->rtcpXr,
+			sdp + sdpLen, sdpMaxLen - sdpLen);
+		if (ret < 0) {
+			SDP_LOGE("sdp_generate_rtcp_xr_attribute()"
+				" failed (%d)", ret);
+			error = 1;
+		} else
+			sdpLen += ret;
+
+		/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 		struct sdp_attr *attr;
 		for (attr = session->attr; attr; attr = attr->next) {
 			if ((attr->key) && (strlen(attr->key))) {
@@ -483,10 +740,12 @@ char *sdp_generate_session_description(
 		/* Media */
 		struct sdp_media *media;
 		for (media = session->media; media; media = media->next) {
-			int ret = sdp_generate_media_description(
+			ret = sdp_generate_media_description(
 				media, sdp + sdpLen, sdpMaxLen - sdpLen,
 				sessionLevelConnectionAddr);
 			if (ret < 0) {
+				SDP_LOGE("sdp_generate_media_description()"
+					" failed (%d)", ret);
 				error = 1;
 				break;
 			} else
@@ -507,7 +766,7 @@ struct sdp_session *sdp_parse_session_description(
 {
 	SDP_RETURN_VAL_IF_FAILED(sessionDescription != NULL, -EINVAL, NULL);
 
-	int error = 0;
+	int error = 0, ret;
 	char *sdp;
 	struct sdp_media *media = NULL;
 	char *p, type, *value, *temp;
@@ -843,10 +1102,25 @@ struct sdp_session *sdp_parse_session_description(
 					payload_type_int, encoding_name,
 					clock_rate_int, encoding_params);
 			} else if ((!strncmp(attr_key,
+				SDP_ATTR_RTCP_XR, 4)) &&
+				(attr_value)) {
+				if (media)
+					ret = sdp_parse_rtcp_xr_attribute(
+						&media->rtcpXr, attr_value);
+				else
+					ret = sdp_parse_rtcp_xr_attribute(
+						&session->rtcpXr, attr_value);
+				if (ret < 0) {
+					SDP_LOGW("sdp_parse_rtcp_xr_attribute()"
+						" failed (%d)", ret);
+					error = 1;
+					goto cleanup;
+				}
+			} else if ((!strncmp(attr_key,
 				SDP_ATTR_RTCP_PORT, 4)) &&
 				(attr_value)) {
 				if (!media) {
-					SDP_LOGW("attribute 'rtpmap' not"
+					SDP_LOGW("attribute 'rtcp' not"
 						" on media level");
 					error = 1;
 					goto cleanup;
