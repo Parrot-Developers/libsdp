@@ -99,6 +99,7 @@ struct sdp_media {
 	unsigned int dstStreamPort;
 	unsigned int dstControlPort;
 	unsigned int payloadType;
+	char *controlUrl;
 
 	/* RTP/AVP rtpmap attribute */
 	char *encodingName;
@@ -126,6 +127,7 @@ struct sdp_session {
 	char *phone;
 	char *connectionAddr;
 	int isMulticast;
+	char *controlUrl;
 	struct sdp_rtcp_xr rtcpXr;
 	unsigned int attrCount;
 	struct sdp_attr *attr;

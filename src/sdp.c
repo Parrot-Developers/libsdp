@@ -40,6 +40,7 @@
 
 
 #define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
+#define SDP_ATTR_CONTROL_URL "control"
 #define SDP_ATTR_RTCP_PORT "rtcp"
 #define SDP_ATTR_RTCP_XR "rtcp-xr"
 #define SDP_ATTR_RTCP_XR_LOSS_RLE "pkt-loss-rle"
@@ -114,6 +115,7 @@ int sdp_session_destroy(
 	free(session->email);
 	free(session->phone);
 	free(session->connectionAddr);
+	free(session->controlUrl);
 	free(session);
 
 	return 0;
@@ -240,6 +242,7 @@ int sdp_session_remove_media(
 
 	free(media->mediaTitle);
 	free(media->connectionAddr);
+	free(media->controlUrl);
 	free(media->encodingName);
 	free(media->encodingParams);
 	free(media);
@@ -575,6 +578,13 @@ static int sdp_generate_media_description(
 			(isMulticast) ? "/127" : "");
 	}
 
+	/* control URL for use with RTSP */
+	if ((media->controlUrl) && (strlen(media->controlUrl))) {
+		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+			"a=%s:%s\r\n", SDP_ATTR_CONTROL_URL,
+			media->controlUrl);
+	}
+
 	/* RTP/AVP rtpmap attribute */
 	sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
 		"a=%s:%d %s/%d%s%s\r\n", SDP_ATTR_RTPAVP_RTPMAP,
@@ -704,6 +714,13 @@ char *sdp_generate_session_description(
 				"c=IN IP4 %s%s\r\n",
 				session->connectionAddr,
 				(isMulticast) ? "/127" : "");
+		}
+
+		/* control URL for use with RTSP */
+		if ((session->controlUrl) && (strlen(session->controlUrl))) {
+			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+				"a=%s:%s\r\n", SDP_ATTR_CONTROL_URL,
+				session->controlUrl);
 		}
 
 		/* RTCP extended reports attribute */
@@ -1101,6 +1118,23 @@ struct sdp_session *sdp_parse_session_description(
 					" encoding_params=%s",
 					payload_type_int, encoding_name,
 					clock_rate_int, encoding_params);
+			} else if ((!strncmp(attr_key,
+				SDP_ATTR_CONTROL_URL,
+				strlen(SDP_ATTR_CONTROL_URL))) &&
+				(attr_value)) {
+				if (media) {
+					media->controlUrl =
+						strdup(attr_value);
+				} else {
+					session->controlUrl =
+						strdup(attr_value);
+				}
+				if (ret < 0) {
+					SDP_LOGW("sdp_parse_rtcp_xr_attribute()"
+						" failed (%d)", ret);
+					error = 1;
+					goto cleanup;
+				}
 			} else if ((!strncmp(attr_key,
 				SDP_ATTR_RTCP_XR, 4)) &&
 				(attr_value)) {
