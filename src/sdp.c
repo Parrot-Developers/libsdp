@@ -1082,7 +1082,7 @@ struct sdp_session *sdp_parse_session_description(
 					error = 1;
 					goto cleanup;
 				}
-				if ((strncmp(encoding_name, "H264", 4)) &&
+				if ((!strncmp(encoding_name, "H264", 4)) &&
 					(clock_rate_int != 90000)) {
 					/* clock rate must be 90000 for H.264
 					 * (RFC6184 ch. 8.2.1) */
