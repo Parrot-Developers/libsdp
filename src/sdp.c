@@ -939,24 +939,14 @@ struct sdp_session *sdp_parse_session_description(
 			if (media) {
 				media->connectionAddr =
 					strdup(connection_address);
-				media->isMulticast = 1;
+				media->isMulticast = isMulticast;
 				SDP_LOGD("SDP: media nettype=%s addrtype=%s"
 					" connection_address=%s",
 					nettype, addrtype, connection_address);
 			} else {
 				session->connectionAddr =
 					strdup(connection_address);
-				session->isMulticast = 1;
-				if ((!isMulticast) && (!session->serverAddr))
-					session->serverAddr =
-						strdup(connection_address);
-				else if ((!isMulticast) &&
-					(strcmp(session->serverAddr,
-						connection_address))) {
-					free(session->serverAddr);
-					session->serverAddr =
-						strdup(connection_address);
-				}
+				session->isMulticast = isMulticast;
 				SDP_LOGD("SDP: nettype=%s addrtype=%s"
 					" connection_address=%s",
 					nettype, addrtype, connection_address);
