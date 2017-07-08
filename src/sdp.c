@@ -1042,7 +1042,7 @@ struct sdp_session *sdp_parse_session_description(
 
 			char *temp2 = NULL;
 			char *attr_key = strtok_r(value, ":", &temp2);
-			char *attr_value = strtok_r(NULL, ":", &temp2);
+			char *attr_value = strtok_r(NULL, "\n", &temp2);
 			attr->key = strdup(attr_key);
 			if (attr_value)
 				attr->value = strdup(attr_value);
