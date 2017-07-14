@@ -136,6 +136,7 @@ struct sdp_session {
 	char *uri;
 	char *email;
 	char *phone;
+	char *tool;
 	char *type;
 	char *charset;
 	char *connectionAddr;

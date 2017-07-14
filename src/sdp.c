@@ -105,6 +105,7 @@ int sdp_session_destroy(
 	free(session->uri);
 	free(session->email);
 	free(session->phone);
+	free(session->tool);
 	free(session->type);
 	free(session->charset);
 	free(session->connectionAddr);
@@ -753,6 +754,15 @@ char *sdp_generate_session_description(
 				(isMulticast) ? "/127" : "");
 		}
 
+		/* Tool */
+		if ((session->tool) && (strlen(session->tool))) {
+			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+				"%c=%s:%s\r\n",
+				SDP_TYPE_ATTRIBUTE,
+				SDP_ATTR_TOOL,
+				session->tool);
+		}
+
 		/* Start mode */
 		if ((session->startMode > SDP_START_MODE_UNSPECIFIED) &&
 			(session->startMode < SDP_START_MODE_MAX)) {
@@ -1184,6 +1194,16 @@ struct sdp_session *sdp_parse_session_description(
 					" encoding_params=%s",
 					payload_type_int, encoding_name,
 					i_clock_rate, encoding_params);
+			} else if ((!strncmp(attr_key, SDP_ATTR_TOOL,
+				strlen(SDP_ATTR_TOOL))) &&
+				(attr_value)) {
+				if (media) {
+					SDP_LOGW("attribute 'tool' not"
+						" on session level");
+				} else {
+					session->tool =
+						strdup(attr_value);
+				}
 			} else if ((!strncmp(attr_key, SDP_ATTR_TYPE,
 				strlen(SDP_ATTR_TYPE))) &&
 				(attr_value)) {
