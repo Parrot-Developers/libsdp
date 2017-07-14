@@ -73,6 +73,10 @@
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MIN 96
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MAX 127
 
+#define SDP_ATTR_RECVONLY "recvonly"
+#define SDP_ATTR_SENDRECV "sendrecv"
+#define SDP_ATTR_SENDONLY "sendonly"
+#define SDP_ATTR_INACTIVE "inactive"
 #define SDP_ATTR_TYPE "type"
 #define SDP_ATTR_CHARSET "charset"
 #define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"

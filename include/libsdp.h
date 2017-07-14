@@ -56,6 +56,16 @@ enum sdp_media_type {
 };
 
 
+enum sdp_start_mode {
+	SDP_START_MODE_UNSPECIFIED = 0,
+	SDP_START_MODE_RECVONLY,
+	SDP_START_MODE_SENDRECV,
+	SDP_START_MODE_SENDONLY,
+	SDP_START_MODE_INACTIVE,
+	SDP_START_MODE_MAX,
+};
+
+
 enum sdp_rtcp_xr_rtt_report_mode {
 	SDP_RTCP_XR_RTT_REPORT_NONE = 0,
 	SDP_RTCP_XR_RTT_REPORT_ALL,
@@ -100,6 +110,7 @@ struct sdp_media {
 	unsigned int dstControlPort;
 	unsigned int payloadType;
 	char *controlUrl;
+	enum sdp_start_mode startMode;
 
 	/* RTP/AVP rtpmap attribute */
 	char *encodingName;
@@ -130,6 +141,7 @@ struct sdp_session {
 	char *connectionAddr;
 	int isMulticast;
 	char *controlUrl;
+	enum sdp_start_mode startMode;
 	struct sdp_rtcp_xr rtcpXr;
 	unsigned int attrCount;
 	struct sdp_attr *attr;

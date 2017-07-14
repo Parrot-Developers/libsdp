@@ -48,6 +48,15 @@ static const char *const sdp_media_type_str[] = {
 };
 
 
+static const char *const sdp_start_mode_str[] = {
+	"unspecified",
+	SDP_ATTR_RECVONLY,
+	SDP_ATTR_SENDRECV,
+	SDP_ATTR_SENDONLY,
+	SDP_ATTR_INACTIVE,
+};
+
+
 static const char *const sdp_rtcp_xr_rtt_report_mode_str[] = {
 	"none",
 	"all",
@@ -569,6 +578,15 @@ static int sdp_generate_media_description(
 			(isMulticast) ? "/127" : "");
 	}
 
+	/* Start mode */
+	if ((media->startMode > SDP_START_MODE_UNSPECIFIED) &&
+		(media->startMode < SDP_START_MODE_MAX)) {
+		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+			"%c=%s\r\n",
+			SDP_TYPE_ATTRIBUTE,
+			sdp_start_mode_str[media->startMode]);
+	}
+
 	/* Control URL for use with RTSP */
 	if ((media->controlUrl) && (strlen(media->controlUrl))) {
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
@@ -733,6 +751,15 @@ char *sdp_generate_session_description(
 				SDP_TYPE_CONNECTION,
 				session->connectionAddr,
 				(isMulticast) ? "/127" : "");
+		}
+
+		/* Start mode */
+		if ((session->startMode > SDP_START_MODE_UNSPECIFIED) &&
+			(session->startMode < SDP_START_MODE_MAX)) {
+			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+				"%c=%s\r\n",
+				SDP_TYPE_ATTRIBUTE,
+				sdp_start_mode_str[session->startMode]);
 		}
 
 		/* Session type */
@@ -1187,11 +1214,41 @@ struct sdp_session *sdp_parse_session_description(
 					session->controlUrl =
 						strdup(attr_value);
 				}
-				if (ret < 0) {
-					SDP_LOGW("sdp_parse_rtcp_xr_attribute()"
-						" failed (%d)", ret);
-					error = 1;
-					goto cleanup;
+			} else if (!strncmp(attr_key, SDP_ATTR_RECVONLY,
+				strlen(SDP_ATTR_RECVONLY))) {
+				if (media) {
+					media->startMode =
+						SDP_START_MODE_RECVONLY;
+				} else {
+					session->startMode =
+						SDP_START_MODE_RECVONLY;
+				}
+			} else if (!strncmp(attr_key, SDP_ATTR_SENDRECV,
+				strlen(SDP_ATTR_SENDRECV))) {
+				if (media) {
+					media->startMode =
+						SDP_START_MODE_SENDRECV;
+				} else {
+					session->startMode =
+						SDP_START_MODE_SENDRECV;
+				}
+			} else if (!strncmp(attr_key, SDP_ATTR_SENDONLY,
+				strlen(SDP_ATTR_SENDONLY))) {
+				if (media) {
+					media->startMode =
+						SDP_START_MODE_SENDONLY;
+				} else {
+					session->startMode =
+						SDP_START_MODE_SENDONLY;
+				}
+			} else if (!strncmp(attr_key, SDP_ATTR_INACTIVE,
+				strlen(SDP_ATTR_INACTIVE))) {
+				if (media) {
+					media->startMode =
+						SDP_START_MODE_INACTIVE;
+				} else {
+					session->startMode =
+						SDP_START_MODE_INACTIVE;
 				}
 			} else if ((!strncmp(attr_key, SDP_ATTR_RTCP_XR,
 				strlen(SDP_ATTR_RTCP_XR))) && (attr_value)) {
