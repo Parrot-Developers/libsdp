@@ -39,24 +39,6 @@
 #include "sdp.h"
 
 
-#define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
-#define SDP_ATTR_CONTROL_URL "control"
-#define SDP_ATTR_RTCP_PORT "rtcp"
-#define SDP_ATTR_RTCP_XR "rtcp-xr"
-#define SDP_ATTR_RTCP_XR_LOSS_RLE "pkt-loss-rle"
-#define SDP_ATTR_RTCP_XR_DUP_RLE "pkt-dup-rle"
-#define SDP_ATTR_RTCP_XR_RCPT_TIMES "pkt-rcpt-times"
-#define SDP_ATTR_RTCP_XR_RCVR_RTT "rcvr-rtt"
-#define SDP_ATTR_RTCP_XR_STAT_SUMMARY "stat-summary"
-#define SDP_ATTR_RTCP_XR_STAT_LOSS "loss"
-#define SDP_ATTR_RTCP_XR_STAT_DUP "dup"
-#define SDP_ATTR_RTCP_XR_STAT_JITT "jitt"
-#define SDP_ATTR_RTCP_XR_STAT_TTL "TTL"
-#define SDP_ATTR_RTCP_XR_STAT_HL "HL"
-#define SDP_ATTR_RTCP_XR_VOIP_METRICS "voip-metrics"
-#define SDP_ATTR_RTCP_XR_DJB_METRICS "de-jitter-buffer"
-
-
 static const char *const sdp_media_type_str[] = {
 	"audio",
 	"video",
@@ -429,7 +411,10 @@ static int sdp_generate_rtcp_xr_attribute(
 	}
 	if (xrFormatLen > 0) {
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"a=%s:%s\r\n", SDP_ATTR_RTCP_XR, xrFormat);
+			"%c=%s:%s\r\n",
+			SDP_TYPE_ATTRIBUTE,
+			SDP_ATTR_RTCP_XR,
+			xrFormat);
 	}
 
 	return sdpLen;
@@ -555,7 +540,8 @@ static int sdp_generate_media_description(
 
 	/* Media Description (m=<media> <port> <proto> <fmt> ...) */
 	sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-		"m=%s %d RTP/AVP %d\r\n",
+		"%c=%s %d " SDP_PROTO_RTPAVP " %d\r\n",
+		SDP_TYPE_MEDIA,
 		sdp_media_type_str[media->type],
 		media->dstStreamPort,
 		media->payloadType);
@@ -563,17 +549,20 @@ static int sdp_generate_media_description(
 	/* Media Title (i=<media title>) */
 	if ((media->mediaTitle) && (strlen(media->mediaTitle)))
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"i=%s\r\n",
+			"%c=%s\r\n",
+			SDP_TYPE_INFORMATION,
 			media->mediaTitle);
 
 	/* Connection Data (c=<nettype> <addrtype> <connection-address>) */
 	if ((media->connectionAddr) && (strlen(media->connectionAddr))) {
 		int isMulticast = 0;
 		int addrFirst = atoi(media->connectionAddr);
-		if ((addrFirst >= 224) && (addrFirst <= 239))
+		if ((addrFirst >= SDP_MULTICAST_ADDR_MIN) &&
+			(addrFirst <= SDP_MULTICAST_ADDR_MAX))
 			isMulticast = 1;
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"c=IN IP4 %s%s\r\n",
+			"%c=IN IP4 %s%s\r\n",
+			SDP_TYPE_CONNECTION,
 			media->connectionAddr,
 			(isMulticast) ? "/127" : "");
 	}
@@ -581,14 +570,20 @@ static int sdp_generate_media_description(
 	/* control URL for use with RTSP */
 	if ((media->controlUrl) && (strlen(media->controlUrl))) {
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"a=%s:%s\r\n", SDP_ATTR_CONTROL_URL,
+			"%c=%s:%s\r\n",
+			SDP_TYPE_ATTRIBUTE,
+			SDP_ATTR_CONTROL_URL,
 			media->controlUrl);
 	}
 
 	/* RTP/AVP rtpmap attribute */
 	sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-		"a=%s:%d %s/%d%s%s\r\n", SDP_ATTR_RTPAVP_RTPMAP,
-		media->payloadType, media->encodingName, media->clockRate,
+		"%c=%s:%d %s/%d%s%s\r\n",
+		SDP_TYPE_ATTRIBUTE,
+		SDP_ATTR_RTPAVP_RTPMAP,
+		media->payloadType,
+		media->encodingName,
+		media->clockRate,
 		((media->encodingParams) && (strlen(media->encodingParams))) ?
 			"/" : "",
 		((media->encodingParams) && (strlen(media->encodingParams))) ?
@@ -597,7 +592,9 @@ static int sdp_generate_media_description(
 	/* RTCP destination port (if not RTP port + 1) */
 	if (media->dstControlPort != media->dstStreamPort + 1)
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"a=%s:%d\r\n", SDP_ATTR_RTCP_PORT,
+			"%c=%s:%d\r\n",
+			SDP_TYPE_ATTRIBUTE,
+			SDP_ATTR_RTCP_PORT,
 			media->dstControlPort);
 
 	/* RTCP extended reports attribute */
@@ -615,11 +612,14 @@ static int sdp_generate_media_description(
 		if ((attr->key) && (strlen(attr->key))) {
 			if ((attr->value) && (strlen(attr->value)))
 				sdpLen += snprintf(sdp + sdpLen,
-					sdpMaxLen - sdpLen, "a=%s:%s\r\n",
-					attr->key, attr->value);
+					sdpMaxLen - sdpLen, "%c=%s:%s\r\n",
+					SDP_TYPE_ATTRIBUTE,
+					attr->key,
+					attr->value);
 			else
 				sdpLen += snprintf(sdp + sdpLen,
-					sdpMaxLen - sdpLen, "a=%s\r\n",
+					sdpMaxLen - sdpLen, "%c=%s\r\n",
+					SDP_TYPE_ATTRIBUTE,
 					attr->key);
 		}
 	}
@@ -651,19 +651,23 @@ char *sdp_generate_session_description(
 		/* Origin (o=<username> <sess-id> <sess-version>
 		 * <nettype> <addrtype> <unicast-address>) */
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"o=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
+			"%c=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
+			SDP_TYPE_ORIGIN,
 			session->sessionId,
 			session->sessionVersion,
 			session->serverAddr);
 	} else {
 		/* Protocol Version (v=0) */
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"v=0\r\n");
+			"%c=%d\r\n",
+			SDP_TYPE_VERSION,
+			SDP_VERSION);
 
 		/* Origin (o=<username> <sess-id> <sess-version>
 		 * <nettype> <addrtype> <unicast-address>) */
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"o=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
+			"%c=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
+			SDP_TYPE_ORIGIN,
 			session->sessionId,
 			session->sessionVersion,
 			session->serverAddr);
@@ -672,34 +676,45 @@ char *sdp_generate_session_description(
 		if ((session->sessionName) &&
 			(strlen(session->sessionName)))
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"s=%s\r\n", session->sessionName);
+				"%c=%s\r\n",
+				SDP_TYPE_SESSION_NAME,
+				session->sessionName);
 		else
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"s= \r\n");
+				"%c= \r\n",
+				SDP_TYPE_SESSION_NAME);
 
 		/* Session Information (i=<session description>) */
 		if ((session->sessionInfo) &&
 			(strlen(session->sessionInfo)))
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"i=%s\r\n", session->sessionInfo);
+				"%c=%s\r\n",
+				SDP_TYPE_INFORMATION,
+				session->sessionInfo);
 
 		/* URI (u=<uri>) */
 		if ((session->uri) &&
 			(strlen(session->uri)))
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"u=%s\r\n", session->uri);
+				"%c=%s\r\n",
+				SDP_TYPE_URI,
+				session->uri);
 
 		/* Email Address (e=<email-address>) */
 		if ((session->email) &&
 			(strlen(session->email)))
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"e=%s\r\n", session->email);
+				"%c=%s\r\n",
+				SDP_TYPE_EMAIL,
+				session->email);
 
 		/* Phone Number (p=<phone-number>) */
 		if ((session->phone) &&
 			(strlen(session->phone)))
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"p=%s\r\n", session->phone);
+				"%c=%s\r\n",
+				SDP_TYPE_PHONE,
+				session->phone);
 
 		/* Connection Data (c=<nettype> <addrtype>
 		 * <connection-address>) */
@@ -708,10 +723,12 @@ char *sdp_generate_session_description(
 			sessionLevelConnectionAddr = 1;
 			int isMulticast = 0;
 			int addrFirst = atoi(session->connectionAddr);
-			if ((addrFirst >= 224) && (addrFirst <= 239))
+			if ((addrFirst >= SDP_MULTICAST_ADDR_MIN) &&
+				(addrFirst <= SDP_MULTICAST_ADDR_MAX))
 				isMulticast = 1;
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"c=IN IP4 %s%s\r\n",
+				"%c=IN IP4 %s%s\r\n",
+				SDP_TYPE_CONNECTION,
 				session->connectionAddr,
 				(isMulticast) ? "/127" : "");
 		}
@@ -719,7 +736,9 @@ char *sdp_generate_session_description(
 		/* control URL for use with RTSP */
 		if ((session->controlUrl) && (strlen(session->controlUrl))) {
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-				"a=%s:%s\r\n", SDP_ATTR_CONTROL_URL,
+				"%c=%s:%s\r\n",
+				SDP_TYPE_ATTRIBUTE,
+				SDP_ATTR_CONTROL_URL,
 				session->controlUrl);
 		}
 
@@ -740,19 +759,23 @@ char *sdp_generate_session_description(
 				if ((attr->value) && (strlen(attr->value)))
 					sdpLen += snprintf(sdp + sdpLen,
 						sdpMaxLen - sdpLen,
-						"a=%s:%s\r\n",
-						attr->key, attr->value);
+						"%c=%s:%s\r\n",
+						SDP_TYPE_ATTRIBUTE,
+						attr->key,
+						attr->value);
 				else
 					sdpLen += snprintf(sdp + sdpLen,
 						sdpMaxLen - sdpLen,
-						"a=%s\r\n",
+						"%c=%s\r\n",
+						SDP_TYPE_ATTRIBUTE,
 						attr->key);
 			}
 		}
 
 		/* Timing (t=<start-time> <stop-time>) */
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
-			"t=0 0\r\n");
+			"%c=0 0\r\n",
+			SDP_TYPE_TIME);
 
 		/* Media */
 		struct sdp_media *media;
@@ -816,10 +839,10 @@ struct sdp_session *sdp_parse_session_description(
 		value = p + 2;
 
 		switch (type) {
-		case 'v':
+		case SDP_TYPE_VERSION:
 		{
 			int version = -1;
-			if (sscanf(value, "%d", &version) == 1)
+			if (sscanf(value, "%d", &version) == SDP_VERSION)
 				SDP_LOGD("SDP: version=%d", version);
 			if (version != 0) {
 				/* SDP version must be 0 (RFC4566) */
@@ -830,7 +853,7 @@ struct sdp_session *sdp_parse_session_description(
 			}
 			break;
 		}
-		case 'o':
+		case SDP_TYPE_ORIGIN:
 		{
 			char *temp2 = NULL;
 			char *username = strtok_r(value, " ", &temp2);
@@ -867,13 +890,13 @@ struct sdp_session *sdp_parse_session_description(
 				addrtype, unicast_address);
 			break;
 		}
-		case 's':
+		case SDP_TYPE_SESSION_NAME:
 		{
 			session->sessionName = strdup(value);
 			SDP_LOGD("SDP: session name=%s", session->sessionName);
 			break;
 		}
-		case 'i':
+		case SDP_TYPE_INFORMATION:
 		{
 			if (media) {
 				media->mediaTitle = strdup(value);
@@ -886,25 +909,25 @@ struct sdp_session *sdp_parse_session_description(
 			}
 			break;
 		}
-		case 'u':
+		case SDP_TYPE_URI:
 		{
 			session->uri = strdup(value);
 			SDP_LOGD("SDP: uri=%s", session->uri);
 			break;
 		}
-		case 'e':
+		case SDP_TYPE_EMAIL:
 		{
 			session->email = strdup(value);
 			SDP_LOGD("SDP: email=%s", session->email);
 			break;
 		}
-		case 'p':
+		case SDP_TYPE_PHONE:
 		{
 			session->phone = strdup(value);
 			SDP_LOGD("SDP: phone=%s", session->phone);
 			break;
 		}
-		case 'c':
+		case SDP_TYPE_CONNECTION:
 		{
 			char *temp2 = NULL;
 			char *nettype = strtok_r(value, " ", &temp2);
@@ -929,7 +952,8 @@ struct sdp_session *sdp_parse_session_description(
 				continue;
 			int addrFirst = atoi(connection_address);
 			int isMulticast =
-				((addrFirst >= 224) && (addrFirst <= 239)) ?
+				((addrFirst >= SDP_MULTICAST_ADDR_MIN) &&
+				(addrFirst <= SDP_MULTICAST_ADDR_MAX)) ?
 				1 : 0;
 			if (isMulticast) {
 				char *p2 = strchr(connection_address, '/');
@@ -953,7 +977,7 @@ struct sdp_session *sdp_parse_session_description(
 			}
 			break;
 		}
-		case 't':
+		case SDP_TYPE_TIME:
 		{
 			char *temp2 = NULL;
 			char *start_time = NULL;
@@ -968,7 +992,7 @@ struct sdp_session *sdp_parse_session_description(
 				start_time_int, stop_time_int);
 			break;
 		}
-		case 'm':
+		case SDP_TYPE_MEDIA:
 		{
 			media = sdp_session_add_media(session);
 			if (media == NULL) {
@@ -1006,15 +1030,18 @@ struct sdp_session *sdp_parse_session_description(
 				media->dstStreamPort = port_int;
 				media->dstControlPort = port_int + 1;
 			}
-			if ((!proto) || (strcmp(proto, "RTP/AVP") != 0)) {
+			if ((!proto) || (strncmp(proto, SDP_PROTO_RTPAVP,
+				strlen(SDP_PROTO_RTPAVP)) != 0)) {
 				SDP_LOGW("unsupported protocol '%s'",
 					(proto) ? proto : "");
 				error = 1;
 				goto cleanup;
 			}
 			media->payloadType = (fmt) ? atoi(fmt) : 0;
-			if ((media->payloadType < 96) ||
-				(media->payloadType > 127)) {
+			if ((media->payloadType <
+				SDP_DYNAMIC_PAYLOAD_TYPE_MIN) ||
+				(media->payloadType >
+				SDP_DYNAMIC_PAYLOAD_TYPE_MAX)) {
 				/* payload type must be dynamic
 				 * (RFC3551 ch. 6) */
 				SDP_LOGW("unsupported payload type (%d)",
@@ -1027,7 +1054,7 @@ struct sdp_session *sdp_parse_session_description(
 				proto, media->payloadType);
 			break;
 		}
-		case 'a':
+		case SDP_TYPE_ATTRIBUTE:
 		{
 			struct sdp_attr *attr = NULL;
 			if (media) {
@@ -1054,7 +1081,8 @@ struct sdp_session *sdp_parse_session_description(
 			if (attr_value)
 				attr->value = strdup(attr_value);
 
-			if ((!strncmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP, 6)) &&
+			if ((!strncmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP,
+				strlen(SDP_ATTR_RTPAVP_RTPMAP))) &&
 				(attr_value)) {
 				if (!media) {
 					SDP_LOGW("attribute 'rtpmap' not"
@@ -1073,7 +1101,7 @@ struct sdp_session *sdp_parse_session_description(
 					(payload_type) ? atoi(payload_type) : 0;
 				encoding_name = strtok_r(NULL, "/", &temp3);
 				clock_rate = strtok_r(NULL, "/", &temp3);
-				unsigned int clock_rate_int =
+				unsigned int i_clock_rate =
 					(clock_rate) ? atoi(clock_rate) : 0;
 				encoding_params = strtok_r(NULL, "/", &temp3);
 				if (payload_type_int != media->payloadType) {
@@ -1089,12 +1117,13 @@ struct sdp_session *sdp_parse_session_description(
 					error = 1;
 					goto cleanup;
 				}
-				if ((!strncmp(encoding_name, "H264", 4)) &&
-					(clock_rate_int != 90000)) {
+				if ((!strncmp(encoding_name, SDP_ENCODING_H264,
+					strlen(SDP_ENCODING_H264))) &&
+					(i_clock_rate != SDP_H264_CLOCKRATE)) {
 					/* clock rate must be 90000 for H.264
 					 * (RFC6184 ch. 8.2.1) */
 					SDP_LOGW("unsupported clock rate %d",
-						clock_rate_int);
+						i_clock_rate);
 					error = 1;
 					goto cleanup;
 				}
@@ -1102,14 +1131,13 @@ struct sdp_session *sdp_parse_session_description(
 				if (encoding_params)
 					media->encodingParams =
 						strdup(encoding_params);
-				media->clockRate = clock_rate_int;
+				media->clockRate = i_clock_rate;
 				SDP_LOGD("SDP: payload_type=%d"
 					" encoding_name=%s clock_rate=%d"
 					" encoding_params=%s",
 					payload_type_int, encoding_name,
-					clock_rate_int, encoding_params);
-			} else if ((!strncmp(attr_key,
-				SDP_ATTR_CONTROL_URL,
+					i_clock_rate, encoding_params);
+			} else if ((!strncmp(attr_key, SDP_ATTR_CONTROL_URL,
 				strlen(SDP_ATTR_CONTROL_URL))) &&
 				(attr_value)) {
 				if (media) {
@@ -1125,9 +1153,8 @@ struct sdp_session *sdp_parse_session_description(
 					error = 1;
 					goto cleanup;
 				}
-			} else if ((!strncmp(attr_key,
-				SDP_ATTR_RTCP_XR, 4)) &&
-				(attr_value)) {
+			} else if ((!strncmp(attr_key, SDP_ATTR_RTCP_XR,
+				strlen(SDP_ATTR_RTCP_XR))) && (attr_value)) {
 				if (media)
 					ret = sdp_parse_rtcp_xr_attribute(
 						&media->rtcpXr, attr_value);
@@ -1140,9 +1167,8 @@ struct sdp_session *sdp_parse_session_description(
 					error = 1;
 					goto cleanup;
 				}
-			} else if ((!strncmp(attr_key,
-				SDP_ATTR_RTCP_PORT, 4)) &&
-				(attr_value)) {
+			} else if ((!strncmp(attr_key, SDP_ATTR_RTCP_PORT,
+				strlen(SDP_ATTR_RTCP_PORT))) && (attr_value)) {
 				if (!media) {
 					SDP_LOGW("attribute 'rtcp' not"
 						" on media level");

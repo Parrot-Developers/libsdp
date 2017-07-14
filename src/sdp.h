@@ -50,5 +50,50 @@
 
 #define SDP_NTP_TO_UNIX_OFFSET 2208988800ULL
 
+#define SDP_TYPE_VERSION 'v'
+#define SDP_TYPE_ORIGIN 'o'
+#define SDP_TYPE_SESSION_NAME 's'
+#define SDP_TYPE_INFORMATION 'i'
+#define SDP_TYPE_URI 'u'
+#define SDP_TYPE_EMAIL 'e'
+#define SDP_TYPE_PHONE 'p'
+#define SDP_TYPE_CONNECTION 'c'
+#define SDP_TYPE_BANDWIDTH 'b'
+#define SDP_TYPE_TIME 't'
+#define SDP_TYPE_REPEAT_TIME 'r'
+#define SDP_TYPE_TIME_ZONE 'z'
+#define SDP_TYPE_ENCRYPTION_KEY 'k'
+#define SDP_TYPE_ATTRIBUTE 'a'
+#define SDP_TYPE_MEDIA 'm'
+
+#define SDP_VERSION 0
+
+#define SDP_PROTO_RTPAVP "RTP/AVP"
+
+#define SDP_DYNAMIC_PAYLOAD_TYPE_MIN 96
+#define SDP_DYNAMIC_PAYLOAD_TYPE_MAX 127
+
+#define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
+#define SDP_ATTR_CONTROL_URL "control"
+#define SDP_ATTR_RTCP_PORT "rtcp"
+#define SDP_ATTR_RTCP_XR "rtcp-xr"
+#define SDP_ATTR_RTCP_XR_LOSS_RLE "pkt-loss-rle"
+#define SDP_ATTR_RTCP_XR_DUP_RLE "pkt-dup-rle"
+#define SDP_ATTR_RTCP_XR_RCPT_TIMES "pkt-rcpt-times"
+#define SDP_ATTR_RTCP_XR_RCVR_RTT "rcvr-rtt"
+#define SDP_ATTR_RTCP_XR_STAT_SUMMARY "stat-summary"
+#define SDP_ATTR_RTCP_XR_STAT_LOSS "loss"
+#define SDP_ATTR_RTCP_XR_STAT_DUP "dup"
+#define SDP_ATTR_RTCP_XR_STAT_JITT "jitt"
+#define SDP_ATTR_RTCP_XR_STAT_TTL "TTL"
+#define SDP_ATTR_RTCP_XR_STAT_HL "HL"
+#define SDP_ATTR_RTCP_XR_VOIP_METRICS "voip-metrics"
+#define SDP_ATTR_RTCP_XR_DJB_METRICS "de-jitter-buffer"
+
+#define SDP_ENCODING_H264 "H264"
+#define SDP_H264_CLOCKRATE 90000
+
+#define SDP_MULTICAST_ADDR_MIN 224
+#define SDP_MULTICAST_ADDR_MAX 239
 
 #endif /* !_SDP_H_ */
