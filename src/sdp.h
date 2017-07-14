@@ -73,6 +73,8 @@
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MIN 96
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MAX 127
 
+#define SDP_ATTR_TYPE "type"
+#define SDP_ATTR_CHARSET "charset"
 #define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
 #define SDP_ATTR_CONTROL_URL "control"
 #define SDP_ATTR_RTCP_PORT "rtcp"

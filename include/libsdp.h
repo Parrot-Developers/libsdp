@@ -125,6 +125,8 @@ struct sdp_session {
 	char *uri;
 	char *email;
 	char *phone;
+	char *type;
+	char *charset;
 	char *connectionAddr;
 	int isMulticast;
 	char *controlUrl;

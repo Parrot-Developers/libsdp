@@ -96,6 +96,8 @@ int sdp_session_destroy(
 	free(session->uri);
 	free(session->email);
 	free(session->phone);
+	free(session->type);
+	free(session->charset);
 	free(session->connectionAddr);
 	free(session->controlUrl);
 	free(session);
@@ -567,7 +569,7 @@ static int sdp_generate_media_description(
 			(isMulticast) ? "/127" : "");
 	}
 
-	/* control URL for use with RTSP */
+	/* Control URL for use with RTSP */
 	if ((media->controlUrl) && (strlen(media->controlUrl))) {
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
 			"%c=%s:%s\r\n",
@@ -733,7 +735,25 @@ char *sdp_generate_session_description(
 				(isMulticast) ? "/127" : "");
 		}
 
-		/* control URL for use with RTSP */
+		/* Session type */
+		if ((session->type) && (strlen(session->type))) {
+			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+				"%c=%s:%s\r\n",
+				SDP_TYPE_ATTRIBUTE,
+				SDP_ATTR_TYPE,
+				session->type);
+		}
+
+		/* Charset */
+		if ((session->charset) && (strlen(session->charset))) {
+			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+				"%c=%s:%s\r\n",
+				SDP_TYPE_ATTRIBUTE,
+				SDP_ATTR_CHARSET,
+				session->charset);
+		}
+
+		/* Control URL for use with RTSP */
 		if ((session->controlUrl) && (strlen(session->controlUrl))) {
 			sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
 				"%c=%s:%s\r\n",
@@ -1137,6 +1157,26 @@ struct sdp_session *sdp_parse_session_description(
 					" encoding_params=%s",
 					payload_type_int, encoding_name,
 					i_clock_rate, encoding_params);
+			} else if ((!strncmp(attr_key, SDP_ATTR_TYPE,
+				strlen(SDP_ATTR_TYPE))) &&
+				(attr_value)) {
+				if (media) {
+					SDP_LOGW("attribute 'type' not"
+						" on session level");
+				} else {
+					session->type =
+						strdup(attr_value);
+				}
+			} else if ((!strncmp(attr_key, SDP_ATTR_CHARSET,
+				strlen(SDP_ATTR_CHARSET))) &&
+				(attr_value)) {
+				if (media) {
+					SDP_LOGW("attribute 'charset' not"
+						" on session level");
+				} else {
+					session->charset =
+						strdup(attr_value);
+				}
 			} else if ((!strncmp(attr_key, SDP_ATTR_CONTROL_URL,
 				strlen(SDP_ATTR_CONTROL_URL))) &&
 				(attr_value)) {
