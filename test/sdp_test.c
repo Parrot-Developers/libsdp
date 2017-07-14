@@ -55,6 +55,15 @@ static const char *const sdp_media_type_str[] = {
 };
 
 
+static const char *const sdp_start_mode_str[] = {
+	"unspecified",
+	"recvonly",
+	"sendrecv",
+	"sendonly",
+	"inactive",
+};
+
+
 static void printRtcpXrInfo(struct sdp_rtcp_xr *xr, const char *prefix)
 {
 	if (!xr)
@@ -96,6 +105,11 @@ static void printMediaInfo(struct sdp_media *media)
 	printf("   -- media title: %s\n", media->mediaTitle);
 	printf("   -- connection address: %s%s\n", media->connectionAddr,
 		(media->isMulticast) ? " (multicast)" : "");
+	printf("   -- control URL: %s\n", media->controlUrl);
+	printf("   -- start mode: %s\n",
+		((media->startMode >= 0) &&
+		(media->startMode < SDP_START_MODE_MAX)) ?
+		sdp_start_mode_str[media->startMode] : "unknown");
 	printf("   -- stream port: %d\n", media->dstStreamPort);
 	printf("   -- control port: %d\n", media->dstControlPort);
 	printf("   -- payload type: %d\n", media->payloadType);
@@ -126,8 +140,16 @@ static void printSessionInfo(struct sdp_session *session)
 	printf("-- URI: %s\n", session->uri);
 	printf("-- email: %s\n", session->email);
 	printf("-- phone: %s\n", session->phone);
+	printf("-- tool: %s\n", session->tool);
+	printf("-- type: %s\n", session->type);
+	printf("-- charset: %s\n", session->charset);
 	printf("-- connection address: %s%s\n", session->connectionAddr,
 		(session->isMulticast) ? " (multicast)" : "");
+	printf("-- control URL: %s\n", session->controlUrl);
+	printf("-- start mode: %s\n",
+		((session->startMode >= 0) &&
+		(session->startMode < SDP_START_MODE_MAX)) ?
+		sdp_start_mode_str[session->startMode] : "unknown");
 	printRtcpXrInfo(&session->rtcpXr, "");
 	struct sdp_attr *attr;
 	for (attr = session->attr; attr; attr = attr->next) {
@@ -144,65 +166,92 @@ static void printSessionInfo(struct sdp_session *session)
 int main(int argc, char **argv)
 {
 	int ret = EXIT_SUCCESS;
+	FILE *f = NULL;
 	struct sdp_session *session = NULL, *session2 = NULL;
 	struct sdp_media *media1 = NULL, *media2 = NULL;
 	char *sdp = NULL;
 
-	session = sdp_session_new();
-	if (session == NULL) {
-		fprintf(stderr, "failed to create session\n");
-		ret = EXIT_FAILURE;
-		goto cleanup;
-	}
-	session->sessionId = 123456789;
-	session->sessionVersion = 1;
-	session->serverAddr = strdup("192.168.43.1");
-	session->sessionName = strdup("Bebop2");
-	session->rtcpXr.lossRleReport = 1;
-	session->rtcpXr.djbMetricsReport = 1;
+	if (argc < 2) {
+		session = sdp_session_new();
+		if (session == NULL) {
+			fprintf(stderr, "failed to create session\n");
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+		session->sessionId = 123456789;
+		session->sessionVersion = 1;
+		session->serverAddr = strdup("192.168.43.1");
+		session->sessionName = strdup("Bebop2");
+		session->rtcpXr.lossRleReport = 1;
+		session->rtcpXr.djbMetricsReport = 1;
 
-	media1 = sdp_session_add_media(session);
-	if (media1 == NULL) {
-		fprintf(stderr, "failed to create media #1\n");
-		ret = EXIT_FAILURE;
-		goto cleanup;
-	}
-	media1->type = SDP_MEDIA_TYPE_VIDEO;
-	media1->mediaTitle = strdup("Front camera");
-	media1->connectionAddr = strdup("239.255.42.1");
-	media1->dstStreamPort = 55004;
-	media1->dstControlPort = 55005;
-	media1->payloadType = 96;
-	media1->encodingName = strdup("H264");
-	media1->clockRate = 90000;
+		media1 = sdp_session_add_media(session);
+		if (media1 == NULL) {
+			fprintf(stderr, "failed to create media #1\n");
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+		media1->type = SDP_MEDIA_TYPE_VIDEO;
+		media1->mediaTitle = strdup("Front camera");
+		media1->connectionAddr = strdup("239.255.42.1");
+		media1->dstStreamPort = 55004;
+		media1->dstControlPort = 55005;
+		media1->payloadType = 96;
+		media1->encodingName = strdup("H264");
+		media1->clockRate = 90000;
 
-	media2 = sdp_session_add_media(session);
-	if (media2 == NULL) {
-		fprintf(stderr, "failed to create media #2\n");
-		ret = EXIT_FAILURE;
-		goto cleanup;
-	}
-	media2->type = SDP_MEDIA_TYPE_VIDEO;
-	media2->mediaTitle = strdup("Vertical camera");
-	media2->connectionAddr = strdup("239.255.42.1");
-	media2->dstStreamPort = 55006;
-	media2->dstControlPort = 55007;
-	media2->payloadType = 96;
-	media2->encodingName = strdup("H264");
-	media2->clockRate = 90000;
+		media2 = sdp_session_add_media(session);
+		if (media2 == NULL) {
+			fprintf(stderr, "failed to create media #2\n");
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+		media2->type = SDP_MEDIA_TYPE_VIDEO;
+		media2->mediaTitle = strdup("Vertical camera");
+		media2->connectionAddr = strdup("239.255.42.1");
+		media2->dstStreamPort = 55006;
+		media2->dstControlPort = 55007;
+		media2->payloadType = 96;
+		media2->encodingName = strdup("H264");
+		media2->clockRate = 90000;
 
-	sdp = sdp_generate_session_description(session, 0);
-	if (sdp == NULL) {
-		fprintf(stderr, "sdp_generate_session_description() failed\n");
-		ret = EXIT_FAILURE;
-		goto cleanup;
-	}
+		sdp = sdp_generate_session_description(session, 0);
+		if (sdp == NULL) {
+			fprintf(stderr, "failed to generate"
+				" the session desciption\n");
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
 
-	printf("\n%s\n", sdp);
+		printf("\n%s\n", sdp);
+	} else {
+		f = fopen(argv[1], "r");
+		if (!f) {
+			fprintf(stderr, "failed to open file '%s'\n", argv[1]);
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+		fseek(f, 0, SEEK_END);
+		int fileSize = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		sdp = malloc(fileSize);
+		if (!sdp) {
+			fprintf(stderr, "allocation failed (size %d)\n",
+				fileSize);
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+		int err = fread(sdp, fileSize, 1, f);
+		if (err != 1) {
+			fprintf(stderr, "failed to read from the input file\n");
+			ret = EXIT_FAILURE;
+			goto cleanup;
+		}
+	}
 
 	session2 = sdp_parse_session_description(sdp);
 	if (session2 == NULL) {
-		fprintf(stderr, "sdp_parse_session_description() failed\n");
+		fprintf(stderr, "failed to parse the session description\n");
 		ret = EXIT_FAILURE;
 		goto cleanup;
 	}
@@ -216,6 +265,8 @@ cleanup:
 		sdp_session_destroy(session);
 	if (session2)
 		sdp_session_destroy(session2);
+	if (f)
+		fclose(f);
 
 	exit(ret);
 }
