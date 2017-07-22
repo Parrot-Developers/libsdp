@@ -756,7 +756,8 @@ static int sdp_generate_media_description(
 		SDP_LOGE("sdp_generate_rtcp_xr_attr()"
 			" failed (%d)", ret);
 		error = 1;
-	}
+	} else
+		sdpLen += ret;
 
 	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 	struct sdp_attr *attr;
