@@ -69,6 +69,8 @@ struct sdp_session *sdp_session_new(
 {
 	struct sdp_session *session = calloc(1, sizeof(*session));
 	SDP_RETURN_VAL_IF_FAILED(session != NULL, -ENOMEM, NULL);
+	list_init(&session->attrs);
+	list_init(&session->medias);
 
 	return session;
 }
@@ -80,9 +82,8 @@ int sdp_session_destroy(
 	SDP_RETURN_ERR_IF_FAILED(session != NULL, -EINVAL);
 
 	/* Remove all attibutes */
-	struct sdp_attr *attr, *next_a;
-	for (attr = session->attr, next_a = NULL; attr; attr = next_a) {
-		next_a = attr->next;
+	struct sdp_attr *attr = NULL, *tmpAttr = NULL;
+	list_walk_entry_forward_safe(&session->attrs, attr, tmpAttr, node) {
 		int ret = sdp_session_remove_attr(session, attr);
 		if (ret != 0)
 			SDP_LOGE("sdp_session_remove_attr() failed: %d(%s)",
@@ -90,9 +91,8 @@ int sdp_session_destroy(
 	}
 
 	/* Remove all media */
-	struct sdp_media *media, *next_m;
-	for (media = session->media, next_m = NULL; media; media = next_m) {
-		next_m = media->next;
+	struct sdp_media *media = NULL, *tmpMedia = NULL;
+	list_walk_entry_forward_safe(&session->medias, media, tmpMedia, node) {
 		int ret = sdp_session_remove_media(session, media);
 		if (ret != 0)
 			SDP_LOGE("sdp_session_remove_media() failed: %d(%s)",
@@ -123,13 +123,10 @@ struct sdp_attr *sdp_session_add_attr(
 
 	struct sdp_attr *attr = calloc(1, sizeof(*attr));
 	SDP_RETURN_VAL_IF_FAILED(attr != NULL, -ENOMEM, NULL);
+	list_node_unref(&attr->node);
 
-	/* Add to the chained list */
-	attr->prev = NULL;
-	attr->next = session->attr;
-	if (session->attr)
-		session->attr->prev = attr;
-	session->attr = attr;
+	/* Add to the list */
+	list_add_after(list_last(&session->attrs), &attr->node);
 	session->attrCount++;
 
 	return attr;
@@ -144,8 +141,8 @@ int sdp_session_remove_attr(
 	SDP_RETURN_ERR_IF_FAILED(attr != NULL, -EINVAL);
 
 	int found = 0;
-	struct sdp_attr *_attr;
-	for (_attr = session->attr; _attr; _attr = _attr->next) {
+	struct sdp_attr *_attr = NULL;
+	list_walk_entry_forward(&session->attrs, _attr, node) {
 		if (_attr == attr) {
 			found = 1;
 			break;
@@ -157,13 +154,8 @@ int sdp_session_remove_attr(
 		return -EINVAL;
 	}
 
-	/* Remove from the chained list */
-	if (attr->next)
-		attr->next->prev = attr->prev;
-	if (attr->prev)
-		attr->prev->next = attr->next;
-	if (session->attr == attr)
-		session->attr = attr->next;
+	/* Remove from the list */
+	list_del(&attr->node);
 	session->attrCount--;
 
 	free(attr->key);
@@ -181,13 +173,11 @@ struct sdp_media *sdp_session_add_media(
 
 	struct sdp_media *media = calloc(1, sizeof(*media));
 	SDP_RETURN_VAL_IF_FAILED(media != NULL, -ENOMEM, NULL);
+	list_node_unref(&media->node);
+	list_init(&media->attrs);
 
-	/* Add to the chained list */
-	media->prev = NULL;
-	media->next = session->media;
-	if (session->media)
-		session->media->prev = media;
-	session->media = media;
+	/* Add to the list */
+	list_add_after(list_last(&session->medias), &media->node);
 	session->mediaCount++;
 
 	return media;
@@ -202,8 +192,8 @@ int sdp_session_remove_media(
 	SDP_RETURN_ERR_IF_FAILED(media != NULL, -EINVAL);
 
 	int found = 0;
-	struct sdp_media *_media;
-	for (_media = session->media; _media; _media = _media->next) {
+	struct sdp_media *_media = NULL;
+	list_walk_entry_forward(&session->medias, _media, node) {
 		if (_media == media) {
 			found = 1;
 			break;
@@ -216,22 +206,16 @@ int sdp_session_remove_media(
 	}
 
 	/* Remove all attibutes */
-	struct sdp_attr *attr, *next;
-	for (attr = media->attr, next = NULL; attr; attr = next) {
-		next = attr->next;
+	struct sdp_attr *attr = NULL, *tmpAttr = NULL;
+	list_walk_entry_forward_safe(&media->attrs, attr, tmpAttr, node) {
 		int ret = sdp_media_remove_attr(media, attr);
 		if (ret != 0)
 			SDP_LOGE("sdp_media_remove_attr() failed: %d(%s)",
 				ret, strerror(-ret));
 	}
 
-	/* Remove from the chained list */
-	if (media->next)
-		media->next->prev = media->prev;
-	if (media->prev)
-		media->prev->next = media->next;
-	if (session->media == media)
-		session->media = media->next;
+	/* Remove from the list */
+	list_del(&media->node);
 	session->mediaCount--;
 
 	free(media->mediaTitle);
@@ -255,12 +239,8 @@ struct sdp_attr *sdp_media_add_attr(
 	struct sdp_attr *attr = calloc(1, sizeof(*attr));
 	SDP_RETURN_VAL_IF_FAILED(attr != NULL, -ENOMEM, NULL);
 
-	/* Add to the chained list */
-	attr->prev = NULL;
-	attr->next = media->attr;
-	if (media->attr)
-		media->attr->prev = attr;
-	media->attr = attr;
+	/* Add to the list */
+	list_add_after(list_last(&media->attrs), &attr->node);
 	media->attrCount++;
 
 	return attr;
@@ -275,8 +255,8 @@ int sdp_media_remove_attr(
 	SDP_RETURN_ERR_IF_FAILED(attr != NULL, -EINVAL);
 
 	int found = 0;
-	struct sdp_attr *_attr;
-	for (_attr = media->attr; _attr; _attr = _attr->next) {
+	struct sdp_attr *_attr = NULL;
+	list_walk_entry_forward(&media->attrs, _attr, node) {
 		if (_attr == attr) {
 			found = 1;
 			break;
@@ -288,13 +268,8 @@ int sdp_media_remove_attr(
 		return -EINVAL;
 	}
 
-	/* Remove from the chained list */
-	if (attr->next)
-		attr->next->prev = attr->prev;
-	if (attr->prev)
-		attr->prev->next = attr->next;
-	if (media->attr == attr)
-		media->attr = attr->next;
+	/* Remove from the list */
+	list_del(&attr->node);
 	media->attrCount--;
 
 	free(attr);
@@ -760,8 +735,8 @@ static int sdp_generate_media_description(
 		sdpLen += ret;
 
 	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
-	struct sdp_attr *attr;
-	for (attr = media->attr; attr; attr = attr->next) {
+	struct sdp_attr *attr = NULL;
+	list_walk_entry_forward(&media->attrs, attr, node) {
 		if ((attr->key) && (strlen(attr->key))) {
 			if ((attr->value) && (strlen(attr->value)))
 				sdpLen += snprintf(sdp + sdpLen,
@@ -942,8 +917,8 @@ char *sdp_generate_session_description(
 			sdpLen += ret;
 
 		/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
-		struct sdp_attr *attr;
-		for (attr = session->attr; attr; attr = attr->next) {
+		struct sdp_attr *attr = NULL;
+		list_walk_entry_forward(&session->attrs, attr, node) {
 			if ((attr->key) && (strlen(attr->key))) {
 				if ((attr->value) && (strlen(attr->value)))
 					sdpLen += snprintf(sdp + sdpLen,
@@ -967,8 +942,8 @@ char *sdp_generate_session_description(
 			SDP_TYPE_TIME);
 
 		/* Media */
-		struct sdp_media *media;
-		for (media = session->media; media; media = media->next) {
+		struct sdp_media *media = NULL;
+		list_walk_entry_forward(&session->medias, media, node) {
 			ret = sdp_generate_media_description(
 				media, sdp + sdpLen, sdpMaxLen - sdpLen,
 				sessionLevelConnectionAddr);

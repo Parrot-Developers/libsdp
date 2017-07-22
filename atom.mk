@@ -14,6 +14,7 @@ LOCAL_SRC_FILES := \
     src/sdp_base64.c \
     src/sdp_log.c
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_LIBRARIES := libfutils
 LOCAL_CONDITIONAL_LIBRARIES := OPTIONAL:libulog
 LOCAL_CFLAGS := -Wextra
 

@@ -156,8 +156,8 @@ static void printMediaInfo(struct sdp_media *media)
 	if (!strncmp(media->encodingName, "H264", strlen("H264")))
 		printH264Fmtp(&media->h264Fmtp, "   ");
 	printRtcpXrInfo(&media->rtcpXr, "   ");
-	struct sdp_attr *attr;
-	for (attr = media->attr; attr; attr = attr->next) {
+	struct sdp_attr *attr = NULL;
+	list_walk_entry_forward(&media->attrs, attr, node) {
 		printf("   -- attribute %s%s%s\n", attr->key,
 			(attr->value) ? ": " : "",
 			(attr->value) ? attr->value : "");
@@ -190,15 +190,16 @@ static void printSessionInfo(struct sdp_session *session)
 		(session->startMode < SDP_START_MODE_MAX)) ?
 		sdp_start_mode_str[session->startMode] : "unknown");
 	printRtcpXrInfo(&session->rtcpXr, "");
-	struct sdp_attr *attr;
-	for (attr = session->attr; attr; attr = attr->next) {
+	struct sdp_attr *attr = NULL;
+	list_walk_entry_forward(&session->attrs, attr, node) {
 		printf("-- attribute %s%s%s\n", attr->key,
 			(attr->value) ? ": " : "",
 			(attr->value) ? attr->value : "");
 	}
-	struct sdp_media *media;
-	for (media = session->media; media; media = media->next)
+	struct sdp_media *media = NULL;
+	list_walk_entry_forward(&session->medias, media, node) {
 		printMediaInfo(media);
+	}
 }
 
 

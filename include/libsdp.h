@@ -44,6 +44,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include <inttypes.h>
+#include <futils/list.h>
 
 
 enum sdp_media_type {
@@ -77,8 +78,7 @@ struct sdp_attr {
 	char *key;
 	char *value;
 
-	struct sdp_attr *prev;
-	struct sdp_attr *next;
+	struct list_node node;
 };
 
 
@@ -136,10 +136,9 @@ struct sdp_media {
 	struct sdp_rtcp_xr rtcpXr;
 
 	unsigned int attrCount;
-	struct sdp_attr *attr;
+	struct list_node attrs;
 
-	struct sdp_media *prev;
-	struct sdp_media *next;
+	struct list_node node;
 };
 
 
@@ -161,9 +160,9 @@ struct sdp_session {
 	enum sdp_start_mode startMode;
 	struct sdp_rtcp_xr rtcpXr;
 	unsigned int attrCount;
-	struct sdp_attr *attr;
+	struct list_node attrs;
 	unsigned int mediaCount;
-	struct sdp_media *media;
+	struct list_node medias;
 };
 
 
