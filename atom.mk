@@ -11,6 +11,7 @@ LOCAL_DESCRIPTION := Session Description Protocol library
 LOCAL_CATEGORY_PATH := libs
 LOCAL_SRC_FILES := \
     src/sdp.c \
+    src/sdp_base64.c \
     src/sdp_log.c
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_CONDITIONAL_LIBRARIES := OPTIONAL:libulog

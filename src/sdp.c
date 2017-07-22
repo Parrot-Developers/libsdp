@@ -239,6 +239,8 @@ int sdp_session_remove_media(
 	free(media->controlUrl);
 	free(media->encodingName);
 	free(media->encodingParams);
+	free(media->h264Fmtp.sps);
+	free(media->h264Fmtp.pps);
 	free(media);
 
 	return 0;
@@ -301,8 +303,123 @@ int sdp_media_remove_attr(
 }
 
 
+static int sdp_generate_h264_fmtp(
+	const struct sdp_h264_fmtp *fmtp,
+	unsigned int payloadType,
+	char *sdp,
+	int sdpMaxLen)
+{
+	char h264Format[200];
+	int h264FormatLen = 0, sdpLen = 0;
 
-static int sdp_generate_rtcp_xr_attribute(
+	h264FormatLen += snprintf(h264Format + h264FormatLen,
+		sizeof(h264Format) - h264FormatLen,
+		"%s=%d;", SDP_FMTP_H264_PACKETIZATION,
+		fmtp->packetizationMode);
+	h264FormatLen += snprintf(h264Format + h264FormatLen,
+		sizeof(h264Format) - h264FormatLen,
+		"%s=%02X%02X%02X;", SDP_FMTP_H264_PROFILE_LEVEL,
+		fmtp->profileIdc, fmtp->profileIop, fmtp->levelIdc);
+	if ((fmtp->sps) && (fmtp->spsSize) && (fmtp->pps) && (fmtp->ppsSize)) {
+		int ret = 0, err;
+		char *sps_b64 = NULL;
+		char *pps_b64 = NULL;
+		err = sdp_base64_encode((void *)fmtp->sps,
+			(size_t)fmtp->spsSize, &sps_b64);
+		if (err != 0)
+			ret = err;
+		err = sdp_base64_encode((void *)fmtp->pps,
+			(size_t)fmtp->ppsSize, &pps_b64);
+		if (err != 0)
+			ret = err;
+		if (ret == 0) {
+			h264FormatLen += snprintf(h264Format + h264FormatLen,
+				sizeof(h264Format) - h264FormatLen,
+				"%s=%s,%s;", SDP_FMTP_H264_PARAM_SETS,
+				sps_b64, pps_b64);
+		}
+		free(sps_b64);
+		free(pps_b64);
+	}
+	if (h264FormatLen > 0) {
+		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
+			"%c=%s:%d %s\r\n",
+			SDP_TYPE_ATTRIBUTE,
+			SDP_ATTR_FMTP,
+			payloadType,
+			h264Format);
+	}
+
+	return sdpLen;
+}
+
+
+static int sdp_parse_h264_fmtp(
+	struct sdp_h264_fmtp *fmtp,
+	char *attrValue)
+{
+	int ret = 0;
+	char *temp1 = NULL;
+	char *param = NULL;
+
+	param = strtok_r(attrValue, ";", &temp1);
+	while (param) {
+		if (!strncmp(param, SDP_FMTP_H264_PROFILE_LEVEL,
+			strlen(SDP_FMTP_H264_PROFILE_LEVEL))) {
+			char *p2 = strchr(param, '=');
+			uint32_t profileLevelId = 0;
+			if (p2 != NULL)
+				sscanf(p2 + 1, "%6X", &profileLevelId);
+			fmtp->profileIdc = (profileLevelId >> 16) & 0xFF;
+			fmtp->profileIop = (profileLevelId >> 8) & 0xFF;
+			fmtp->levelIdc = profileLevelId & 0xFF;
+		} else if (!strncmp(param, SDP_FMTP_H264_PACKETIZATION,
+			strlen(SDP_FMTP_H264_PACKETIZATION))) {
+			char *p2 = strchr(param, '=');
+			if (p2 != NULL)
+				fmtp->packetizationMode = atoi(p2 + 1);
+		} else if (!strncmp(param, SDP_FMTP_H264_PARAM_SETS,
+			strlen(SDP_FMTP_H264_PARAM_SETS))) {
+			char *p2 = strchr(param, '=');
+			char *p3 = NULL;
+			if (p2 != NULL)
+				p3 = strchr(p2 + 1, ',');
+			if ((p2 != NULL) && (p3 != NULL)) {
+				*p3 = '\0';
+				char *sps_b64 = p2 + 1;
+				char *pps_b64 = p3 + 1;
+				void *sps = NULL;
+				size_t spsSize = 0;
+				void *pps = NULL;
+				size_t ppsSize = 0;
+				int err = sdp_base64_decode(sps_b64,
+					&sps, &spsSize);
+				if (err != 0)
+					ret = err;
+				err = sdp_base64_decode(pps_b64,
+					&pps, &ppsSize);
+				if (err != 0)
+					ret = err;
+				if (ret != 0) {
+					free(sps);
+					free(pps);
+				} else {
+					fmtp->sps = (uint8_t *)sps;
+					fmtp->spsSize = (unsigned int)spsSize;
+					fmtp->pps = (uint8_t *)pps;
+					fmtp->ppsSize = (unsigned int)ppsSize;
+				}
+			}
+		}
+
+		param = strtok_r(NULL, ";", &temp1);
+	};
+
+	return ret;
+}
+
+
+static int sdp_generate_rtcp_xr_attr(
 	const struct sdp_rtcp_xr *xr,
 	char *sdp,
 	int sdpMaxLen)
@@ -433,7 +550,7 @@ static int sdp_generate_rtcp_xr_attribute(
 }
 
 
-static int sdp_parse_rtcp_xr_attribute(
+static int sdp_parse_rtcp_xr_attr(
 	struct sdp_rtcp_xr *xr,
 	char *attrValue)
 {
@@ -610,6 +727,20 @@ static int sdp_generate_media_description(
 		((media->encodingParams) && (strlen(media->encodingParams))) ?
 			media->encodingParams : "");
 
+	/* H.264 payload format parameters */
+	if (!strncmp(media->encodingName,
+		SDP_ENCODING_H264, strlen(SDP_ENCODING_H264))) {
+		ret = sdp_generate_h264_fmtp(
+			&media->h264Fmtp, media->payloadType,
+			sdp + sdpLen, sdpMaxLen - sdpLen);
+		if (ret < 0) {
+			SDP_LOGE("sdp_generate_h264_fmtp()"
+				" failed (%d)", ret);
+			error = 1;
+		} else
+			sdpLen += ret;
+	}
+
 	/* RTCP destination port (if not RTP port + 1) */
 	if (media->dstControlPort != media->dstStreamPort + 1)
 		sdpLen += snprintf(sdp + sdpLen, sdpMaxLen - sdpLen,
@@ -619,10 +750,10 @@ static int sdp_generate_media_description(
 			media->dstControlPort);
 
 	/* RTCP extended reports attribute */
-	ret = sdp_generate_rtcp_xr_attribute(&media->rtcpXr,
+	ret = sdp_generate_rtcp_xr_attr(&media->rtcpXr,
 		sdp + sdpLen, sdpMaxLen - sdpLen);
 	if (ret < 0) {
-		SDP_LOGE("sdp_generate_rtcp_xr_attribute()"
+		SDP_LOGE("sdp_generate_rtcp_xr_attr()"
 			" failed (%d)", ret);
 		error = 1;
 	}
@@ -800,10 +931,10 @@ char *sdp_generate_session_description(
 		}
 
 		/* RTCP extended reports attribute */
-		ret = sdp_generate_rtcp_xr_attribute(&session->rtcpXr,
+		ret = sdp_generate_rtcp_xr_attr(&session->rtcpXr,
 			sdp + sdpLen, sdpMaxLen - sdpLen);
 		if (ret < 0) {
-			SDP_LOGE("sdp_generate_rtcp_xr_attribute()"
+			SDP_LOGE("sdp_generate_rtcp_xr_attr()"
 				" failed (%d)", ret);
 			error = 1;
 		} else
@@ -1194,6 +1325,42 @@ struct sdp_session *sdp_parse_session_description(
 					" encoding_params=%s",
 					payload_type_int, encoding_name,
 					i_clock_rate, encoding_params);
+			} else if ((!strncmp(attr_key, SDP_ATTR_FMTP,
+				strlen(SDP_ATTR_FMTP))) &&
+				(attr_value)) {
+				if (!media) {
+					SDP_LOGW("attribute 'fmtp' not"
+						" on media level");
+					error = 1;
+					goto cleanup;
+				}
+				char *temp3 = NULL;
+				char *payload_type = NULL;
+				char *fmtp = NULL;
+				payload_type =
+					strtok_r(attr_value, " ", &temp3);
+				unsigned int payload_type_int =
+					(payload_type) ? atoi(payload_type) : 0;
+				if (payload_type_int != media->payloadType) {
+					SDP_LOGW("invalid payload type"
+						" (%d vs. %d)",
+						payload_type_int,
+						media->payloadType);
+					error = 1;
+					goto cleanup;
+				}
+				if ((media->encodingName) &&
+					(!strncmp(media->encodingName,
+					SDP_ENCODING_H264,
+					strlen(SDP_ENCODING_H264)))) {
+					fmtp = strtok_r(NULL, "", &temp3);
+					ret = sdp_parse_h264_fmtp(
+						&media->h264Fmtp, fmtp);
+					if (ret < 0) {
+						SDP_LOGW("sdp_parse_h264_fmtp()"
+							" failed (%d)", ret);
+					}
+				}
 			} else if ((!strncmp(attr_key, SDP_ATTR_TOOL,
 				strlen(SDP_ATTR_TOOL))) &&
 				(attr_value)) {
@@ -1273,13 +1440,13 @@ struct sdp_session *sdp_parse_session_description(
 			} else if ((!strncmp(attr_key, SDP_ATTR_RTCP_XR,
 				strlen(SDP_ATTR_RTCP_XR))) && (attr_value)) {
 				if (media)
-					ret = sdp_parse_rtcp_xr_attribute(
+					ret = sdp_parse_rtcp_xr_attr(
 						&media->rtcpXr, attr_value);
 				else
-					ret = sdp_parse_rtcp_xr_attribute(
+					ret = sdp_parse_rtcp_xr_attr(
 						&session->rtcpXr, attr_value);
 				if (ret < 0) {
-					SDP_LOGW("sdp_parse_rtcp_xr_attribute()"
+					SDP_LOGW("sdp_parse_rtcp_xr_attr()"
 						" failed (%d)", ret);
 					error = 1;
 					goto cleanup;

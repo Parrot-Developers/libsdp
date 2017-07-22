@@ -81,6 +81,7 @@
 #define SDP_ATTR_TYPE "type"
 #define SDP_ATTR_CHARSET "charset"
 #define SDP_ATTR_RTPAVP_RTPMAP "rtpmap"
+#define SDP_ATTR_FMTP "fmtp"
 #define SDP_ATTR_CONTROL_URL "control"
 #define SDP_ATTR_RTCP_PORT "rtcp"
 #define SDP_ATTR_RTCP_XR "rtcp-xr"
@@ -100,7 +101,17 @@
 #define SDP_ENCODING_H264 "H264"
 #define SDP_H264_CLOCKRATE 90000
 
+#define SDP_FMTP_H264_PACKETIZATION "packetization-mode"
+#define SDP_FMTP_H264_PROFILE_LEVEL "profile-level-id"
+#define SDP_FMTP_H264_PARAM_SETS "sprop-parameter-sets"
+
 #define SDP_MULTICAST_ADDR_MIN 224
 #define SDP_MULTICAST_ADDR_MAX 239
+
+
+int sdp_base64_encode(const void *data, size_t size, char **out);
+
+int sdp_base64_decode(const char *str, void **out, size_t *out_size);
+
 
 #endif /* !_SDP_H_ */

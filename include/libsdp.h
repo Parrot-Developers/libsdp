@@ -82,6 +82,19 @@ struct sdp_attr {
 };
 
 
+/* H.264 payload format parameters (see RFC 6184) */
+struct sdp_h264_fmtp {
+	unsigned int packetizationMode;
+	unsigned int profileIdc;
+	unsigned int profileIop;
+	unsigned int levelIdc;
+	uint8_t *sps;
+	unsigned int spsSize;
+	uint8_t *pps;
+	unsigned int ppsSize;
+};
+
+
 /* RFC 3611 and RFC 7005 RTCP extended reports */
 struct sdp_rtcp_xr {
 	int lossRleReport;
@@ -116,6 +129,9 @@ struct sdp_media {
 	char *encodingName;
 	char *encodingParams;
 	unsigned int clockRate;
+
+	/* H.264 payload format parameters */
+	struct sdp_h264_fmtp h264Fmtp;
 
 	struct sdp_rtcp_xr rtcpXr;
 
