@@ -337,6 +337,7 @@ static int sdp_parse_h264_fmtp(
 	char *temp1 = NULL;
 	char *param = NULL;
 
+	fmtp->valid = 0;
 	param = strtok_r(attrValue, ";", &temp1);
 	while (param) {
 		if (!strncmp(param, SDP_FMTP_H264_PROFILE_LEVEL,
@@ -390,6 +391,7 @@ static int sdp_parse_h264_fmtp(
 		param = strtok_r(NULL, ";", &temp1);
 	};
 
+	fmtp->valid = 1;
 	return ret;
 }
 
@@ -533,6 +535,7 @@ static int sdp_parse_rtcp_xr_attr(
 	char *temp1 = NULL;
 	char *xr_format = NULL;
 
+	xr->valid = 0;
 	xr_format = strtok_r(attrValue, " ", &temp1);
 	while (xr_format) {
 		if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_LOSS_RLE,
@@ -608,6 +611,7 @@ static int sdp_parse_rtcp_xr_attr(
 		xr_format = strtok_r(NULL, " ", &temp1);
 	};
 
+	xr->valid = 1;
 	return ret;
 }
 
@@ -704,7 +708,8 @@ static int sdp_generate_media_description(
 
 	/* H.264 payload format parameters */
 	if (!strncmp(media->encodingName,
-		SDP_ENCODING_H264, strlen(SDP_ENCODING_H264))) {
+		SDP_ENCODING_H264, strlen(SDP_ENCODING_H264)) &&
+		(media->h264Fmtp.valid)) {
 		ret = sdp_generate_h264_fmtp(
 			&media->h264Fmtp, media->payloadType,
 			sdp + sdpLen, sdpMaxLen - sdpLen);
@@ -725,14 +730,16 @@ static int sdp_generate_media_description(
 			media->dstControlPort);
 
 	/* RTCP extended reports attribute */
-	ret = sdp_generate_rtcp_xr_attr(&media->rtcpXr,
-		sdp + sdpLen, sdpMaxLen - sdpLen);
-	if (ret < 0) {
-		SDP_LOGE("sdp_generate_rtcp_xr_attr()"
-			" failed (%d)", ret);
-		error = 1;
-	} else
-		sdpLen += ret;
+	if (media->rtcpXr.valid) {
+		ret = sdp_generate_rtcp_xr_attr(&media->rtcpXr,
+			sdp + sdpLen, sdpMaxLen - sdpLen);
+		if (ret < 0) {
+			SDP_LOGE("sdp_generate_rtcp_xr_attr()"
+				" failed (%d)", ret);
+			error = 1;
+		} else
+			sdpLen += ret;
+	}
 
 	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 	struct sdp_attr *attr = NULL;
@@ -907,14 +914,16 @@ char *sdp_generate_session_description(
 		}
 
 		/* RTCP extended reports attribute */
-		ret = sdp_generate_rtcp_xr_attr(&session->rtcpXr,
-			sdp + sdpLen, sdpMaxLen - sdpLen);
-		if (ret < 0) {
-			SDP_LOGE("sdp_generate_rtcp_xr_attr()"
-				" failed (%d)", ret);
-			error = 1;
-		} else
-			sdpLen += ret;
+		if (session->rtcpXr.valid) {
+			ret = sdp_generate_rtcp_xr_attr(&session->rtcpXr,
+				sdp + sdpLen, sdpMaxLen - sdpLen);
+			if (ret < 0) {
+				SDP_LOGE("sdp_generate_rtcp_xr_attr()"
+					" failed (%d)", ret);
+				error = 1;
+			} else
+				sdpLen += ret;
+		}
 
 		/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 		struct sdp_attr *attr = NULL;
@@ -1447,6 +1456,18 @@ struct sdp_session *sdp_parse_session_description(
 			break;
 		}
 		p = strtok_r(NULL, "\n", &temp);
+	}
+
+	/* copy session-level parameters to media-level if undefined */
+	list_walk_entry_forward(&session->medias, media, node) {
+		if ((!media->connectionAddr) && (session->connectionAddr)) {
+			media->connectionAddr = strdup(session->connectionAddr);
+			media->isMulticast = session->isMulticast;
+		}
+		if (media->startMode == SDP_START_MODE_UNSPECIFIED)
+			media->startMode = session->startMode;
+		if ((!media->rtcpXr.valid) && (session->rtcpXr.valid))
+			media->rtcpXr = session->rtcpXr;
 	}
 
 cleanup:

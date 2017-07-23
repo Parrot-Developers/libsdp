@@ -153,9 +153,10 @@ static void printMediaInfo(struct sdp_media *media)
 	printf("   -- encoding name: %s\n", media->encodingName);
 	printf("   -- encoding params: %s\n", media->encodingParams);
 	printf("   -- clock rate: %d\n", media->clockRate);
-	if (!strncmp(media->encodingName, "H264", strlen("H264")))
+	if (media->h264Fmtp.valid)
 		printH264Fmtp(&media->h264Fmtp, "   ");
-	printRtcpXrInfo(&media->rtcpXr, "   ");
+	if (media->rtcpXr.valid)
+		printRtcpXrInfo(&media->rtcpXr, "   ");
 	struct sdp_attr *attr = NULL;
 	list_walk_entry_forward(&media->attrs, attr, node) {
 		printf("   -- attribute %s%s%s\n", attr->key,
@@ -189,7 +190,8 @@ static void printSessionInfo(struct sdp_session *session)
 		((session->startMode >= 0) &&
 		(session->startMode < SDP_START_MODE_MAX)) ?
 		sdp_start_mode_str[session->startMode] : "unknown");
-	printRtcpXrInfo(&session->rtcpXr, "");
+	if (session->rtcpXr.valid)
+		printRtcpXrInfo(&session->rtcpXr, "");
 	struct sdp_attr *attr = NULL;
 	list_walk_entry_forward(&session->attrs, attr, node) {
 		printf("-- attribute %s%s%s\n", attr->key,
@@ -235,6 +237,7 @@ int main(int argc, char **argv)
 		session->startMode = SDP_START_MODE_RECVONLY;
 		session->tool = strdup(argv[0]);
 		session->type = strdup("broadcast");
+		session->rtcpXr.valid = 1;
 		session->rtcpXr.lossRleReport = 1;
 		session->rtcpXr.djbMetricsReport = 1;
 
@@ -253,6 +256,7 @@ int main(int argc, char **argv)
 		media1->payloadType = 96;
 		media1->encodingName = strdup("H264");
 		media1->clockRate = 90000;
+		media1->h264Fmtp.valid = 1;
 		media1->h264Fmtp.packetizationMode = 1;
 		media1->h264Fmtp.profileIdc = 66;
 		media1->h264Fmtp.profileIop = 0;
@@ -283,6 +287,7 @@ int main(int argc, char **argv)
 		media2->payloadType = 96;
 		media2->encodingName = strdup("H264");
 		media2->clockRate = 90000;
+		media2->h264Fmtp.valid = 1;
 		media2->h264Fmtp.packetizationMode = 1;
 		media2->h264Fmtp.profileIdc = 66;
 		media2->h264Fmtp.profileIop = 0;

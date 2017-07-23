@@ -84,6 +84,7 @@ struct sdp_attr {
 
 /* H.264 payload format parameters (see RFC 6184) */
 struct sdp_h264_fmtp {
+	int valid;
 	unsigned int packetizationMode;
 	unsigned int profileIdc;
 	unsigned int profileIop;
@@ -97,6 +98,7 @@ struct sdp_h264_fmtp {
 
 /* RFC 3611 and RFC 7005 RTCP extended reports */
 struct sdp_rtcp_xr {
+	int valid;
 	int lossRleReport;
 	unsigned int lossRleReportMaxSize;
 	int dupRleReport;
