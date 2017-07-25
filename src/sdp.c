@@ -506,8 +506,9 @@ static int sdp_generate_rtcp_xr_attr(
 	if (stat_flag_len > 0) {
 		xr_format_len += snprintf(xr_format + xr_format_len,
 			sizeof(xr_format) - xr_format_len,
-			"%s%s", (is_first) ? "" : " ",
-			SDP_ATTR_RTCP_XR_STAT_SUMMARY);
+			"%s%s=%s", (is_first) ? "" : " ",
+			SDP_ATTR_RTCP_XR_STAT_SUMMARY,
+			stat_flag);
 		is_first = 0;
 	}
 	if (xr->djb_metrics_report) {
