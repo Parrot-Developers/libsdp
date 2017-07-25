@@ -136,6 +136,7 @@ struct sdp_media {
 	/* H.264 payload format parameters */
 	struct sdp_h264_fmtp h264_fmtp;
 
+	/* RTCP extended reports */
 	struct sdp_rtcp_xr rtcp_xr;
 
 	unsigned int attr_count;
@@ -161,7 +162,10 @@ struct sdp_session {
 	int multicast;
 	char *control_url;
 	enum sdp_start_mode start_mode;
+
+	/* RTCP extended reports */
 	struct sdp_rtcp_xr rtcp_xr;
+
 	unsigned int attr_count;
 	struct list_node attrs;
 	unsigned int media_count;
