@@ -1080,7 +1080,13 @@ char *sdp_generate_session_description(
 			(multicast) ? "/127" : "");
 	}
 
-	/* Tool */
+	/* timing (t=<start-time> <stop-time>) */
+	/*TODO*/
+	sdp_len += snprintf(sdp + sdp_len, sdp_max_len - sdp_len,
+		"%c=0 0\r\n",
+		SDP_TYPE_TIME);
+
+	/* tool (a=tool) */
 	if ((session->tool) && (strlen(session->tool))) {
 		sdp_len += snprintf(sdp + sdp_len, sdp_max_len - sdp_len,
 			"%c=%s:%s\r\n",
@@ -1156,11 +1162,6 @@ char *sdp_generate_session_description(
 					attr->key);
 		}
 	}
-
-	/* Timing (t=<start-time> <stop-time>) */
-	sdp_len += snprintf(sdp + sdp_len, sdp_max_len - sdp_len,
-		"%c=0 0\r\n",
-		SDP_TYPE_TIME);
 
 	/* Media */
 	struct sdp_media *media = NULL;
@@ -1375,6 +1376,7 @@ struct sdp_session *sdp_parse_session_description(
 				(stop_time) ? atoll(stop_time) : 0;
 			SDP_LOGD("SDP: start_time=%"PRIu64" stop_time=%"PRIu64,
 				start_time_int, stop_time_int);
+			/*TODO*/
 			break;
 		}
 		case SDP_TYPE_MEDIA:
