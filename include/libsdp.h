@@ -112,6 +112,7 @@ struct sdp_rtcp_xr {
 	int stats_summary_report_jitter;
 	int stats_summary_report_ttl;
 	int stats_summary_report_hl;
+	int voip_metrics_report;
 	int djb_metrics_report;
 };
 

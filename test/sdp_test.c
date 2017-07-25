@@ -126,6 +126,8 @@ static void print_rtcp_xr_info(struct sdp_rtcp_xr *xr, const char *prefix)
 		xr->stats_summary_report_ttl);
 	printf("%s   -- statistics summary report (hl): %d\n", prefix,
 		xr->stats_summary_report_hl);
+	printf("%s   -- VOIP metrics report: %d\n", prefix,
+		xr->voip_metrics_report);
 	printf("%s   -- de-jitter buffer metrics report: %d\n", prefix,
 		xr->djb_metrics_report);
 }

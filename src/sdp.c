@@ -511,6 +511,15 @@ static int sdp_generate_rtcp_xr_attr(
 			stat_flag);
 		is_first = 0;
 	}
+
+	if (xr->voip_metrics_report) {
+		xr_format_len += snprintf(xr_format + xr_format_len,
+			sizeof(xr_format) - xr_format_len,
+			"%s%s", (is_first) ? "" : " ",
+			SDP_ATTR_RTCP_XR_VOIP_METRICS);
+		is_first = 0;
+	}
+
 	if (xr->djb_metrics_report) {
 		xr_format_len += snprintf(xr_format + xr_format_len,
 			sizeof(xr_format) - xr_format_len,
@@ -608,6 +617,11 @@ static int sdp_parse_rtcp_xr_attr(
 					xr->stats_summary_report_hl = 1;
 				stat_flag = strtok_r(NULL, ",", &temp2);
 			}
+
+		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_VOIP_METRICS,
+			strlen(SDP_ATTR_RTCP_XR_VOIP_METRICS))) {
+			xr->voip_metrics_report = 1;
+
 		} else if (!strncmp(xr_format, SDP_ATTR_RTCP_XR_DJB_METRICS,
 			strlen(SDP_ATTR_RTCP_XR_DJB_METRICS)))
 			xr->djb_metrics_report = 1;
