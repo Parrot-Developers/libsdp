@@ -64,73 +64,74 @@ static const char *const sdp_start_mode_str[] = {
 };
 
 
-static void printH264Fmtp(struct sdp_h264_fmtp *fmtp, const char *prefix)
+static void print_h264_fmtp(struct sdp_h264_fmtp *fmtp, const char *prefix)
 {
 	if (!fmtp)
 		return;
 
 	printf("%s-- H.264 format parameters\n", prefix);
 	printf("%s   -- packetization mode: %d\n", prefix,
-		fmtp->packetizationMode);
+		fmtp->packetization_mode);
 	printf("%s   -- profile_idc: %d\n", prefix,
-		fmtp->profileIdc);
+		fmtp->profile_idc);
 	printf("%s   -- profile-iop: 0x%02X\n", prefix,
-		fmtp->profileIop);
+		fmtp->profile_iop);
 	printf("%s   -- level_idc: %d\n", prefix,
-		fmtp->levelIdc);
+		fmtp->level_idc);
 	if (fmtp->sps) {
 		char sps[300];
 		unsigned int i, len;
-		for (i = 0, len = 0; i < fmtp->spsSize; i++) {
+		for (i = 0, len = 0; i < fmtp->sps_size; i++) {
 			len += snprintf(sps + len, sizeof(sps) - len,
 				"%02X ", fmtp->sps[i]);
 		}
 		printf("%s   -- SPS (size %d): %s\n", prefix,
-			fmtp->spsSize, sps);
+			fmtp->sps_size, sps);
 	}
 	if (fmtp->pps) {
 		char pps[300];
 		unsigned int i, len;
-		for (i = 0, len = 0; i < fmtp->ppsSize; i++) {
+		for (i = 0, len = 0; i < fmtp->pps_size; i++) {
 			len += snprintf(pps + len, sizeof(pps) - len,
 				"%02X ", fmtp->pps[i]);
 		}
 		printf("%s   -- PPS (size %d): %s\n", prefix,
-			fmtp->ppsSize, pps);
+			fmtp->pps_size, pps);
 	}
 }
 
 
-static void printRtcpXrInfo(struct sdp_rtcp_xr *xr, const char *prefix)
+static void print_rtcp_xr_info(struct sdp_rtcp_xr *xr, const char *prefix)
 {
 	if (!xr)
 		return;
 
 	printf("%s-- RTCP XR\n", prefix);
 	printf("%s   -- loss RLE report: %d (%d)\n", prefix,
-		xr->lossRleReport, xr->lossRleReportMaxSize);
+		xr->loss_rle_report, xr->loss_rle_report_max_size);
 	printf("%s   -- duplicate RLE report: %d (%d)\n", prefix,
-		xr->dupRleReport, xr->dupRleReportMaxSize);
+		xr->dup_rle_report, xr->dup_rle_report_max_size);
 	printf("%s   -- packet receipt times report: %d (%d)\n", prefix,
-		xr->pktReceiptTimesReport, xr->pktReceiptTimesReportMaxSize);
+		xr->pkt_receipt_times_report,
+		xr->pkt_receipt_times_report_max_size);
 	printf("%s   -- receiver reference time report: %d (%d)\n", prefix,
-		xr->rttReport, xr->rttReportMaxSize);
+		xr->rtt_report, xr->rtt_report_max_size);
 	printf("%s   -- statistics summary report (loss): %d\n", prefix,
-		xr->statsSummaryReportLoss);
+		xr->stats_summary_report_loss);
 	printf("%s   -- statistics summary report (dup): %d\n", prefix,
-		xr->statsSummaryReportDup);
+		xr->stats_summary_report_dup);
 	printf("%s   -- statistics summary report (jitter): %d\n", prefix,
-		xr->statsSummaryReportJitter);
+		xr->stats_summary_report_jitter);
 	printf("%s   -- statistics summary report (ttl): %d\n", prefix,
-		xr->statsSummaryReportTtl);
+		xr->stats_summary_report_ttl);
 	printf("%s   -- statistics summary report (hl): %d\n", prefix,
-		xr->statsSummaryReportHl);
+		xr->stats_summary_report_hl);
 	printf("%s   -- de-jitter buffer metrics report: %d\n", prefix,
-		xr->djbMetricsReport);
+		xr->djb_metrics_report);
 }
 
 
-static void printMediaInfo(struct sdp_media *media)
+static void print_media_info(struct sdp_media *media)
 {
 	if (!media)
 		return;
@@ -139,24 +140,24 @@ static void printMediaInfo(struct sdp_media *media)
 	printf("   -- type: %s\n",
 		((media->type >= 0) && (media->type < SDP_MEDIA_TYPE_MAX)) ?
 		sdp_media_type_str[media->type] : "unknown");
-	printf("   -- media title: %s\n", media->mediaTitle);
-	printf("   -- connection address: %s%s\n", media->connectionAddr,
-		(media->isMulticast) ? " (multicast)" : "");
-	printf("   -- control URL: %s\n", media->controlUrl);
+	printf("   -- media title: %s\n", media->media_title);
+	printf("   -- connection address: %s%s\n", media->connection_addr,
+		(media->multicast) ? " (multicast)" : "");
+	printf("   -- control URL: %s\n", media->control_url);
 	printf("   -- start mode: %s\n",
-		((media->startMode >= 0) &&
-		(media->startMode < SDP_START_MODE_MAX)) ?
-		sdp_start_mode_str[media->startMode] : "unknown");
-	printf("   -- stream port: %d\n", media->dstStreamPort);
-	printf("   -- control port: %d\n", media->dstControlPort);
-	printf("   -- payload type: %d\n", media->payloadType);
-	printf("   -- encoding name: %s\n", media->encodingName);
-	printf("   -- encoding params: %s\n", media->encodingParams);
-	printf("   -- clock rate: %d\n", media->clockRate);
-	if (media->h264Fmtp.valid)
-		printH264Fmtp(&media->h264Fmtp, "   ");
-	if (media->rtcpXr.valid)
-		printRtcpXrInfo(&media->rtcpXr, "   ");
+		((media->start_mode >= 0) &&
+		(media->start_mode < SDP_START_MODE_MAX)) ?
+		sdp_start_mode_str[media->start_mode] : "unknown");
+	printf("   -- stream port: %d\n", media->dst_stream_port);
+	printf("   -- control port: %d\n", media->dst_control_port);
+	printf("   -- payload type: %d\n", media->payload_type);
+	printf("   -- encoding name: %s\n", media->encoding_name);
+	printf("   -- encoding params: %s\n", media->encoding_params);
+	printf("   -- clock rate: %d\n", media->clock_rate);
+	if (media->h264_fmtp.valid)
+		print_h264_fmtp(&media->h264_fmtp, "   ");
+	if (media->rtcp_xr.valid)
+		print_rtcp_xr_info(&media->rtcp_xr, "   ");
 	struct sdp_attr *attr = NULL;
 	list_walk_entry_forward(&media->attrs, attr, node) {
 		printf("   -- attribute %s%s%s\n", attr->key,
@@ -166,32 +167,32 @@ static void printMediaInfo(struct sdp_media *media)
 }
 
 
-static void printSessionInfo(struct sdp_session *session)
+static void print_session_info(struct sdp_session *session)
 {
 	if (!session)
 		return;
 
 	printf("Session\n");
-	printf("-- session ID: %" PRIu64 "\n", session->sessionId);
-	printf("-- session version: %" PRIu64 "\n", session->sessionVersion);
-	printf("-- server address: %s\n", session->serverAddr);
-	printf("-- session name: %s\n", session->sessionName);
-	printf("-- session info: %s\n", session->sessionInfo);
+	printf("-- session ID: %" PRIu64 "\n", session->session_id);
+	printf("-- session version: %" PRIu64 "\n", session->session_version);
+	printf("-- server address: %s\n", session->server_addr);
+	printf("-- session name: %s\n", session->session_name);
+	printf("-- session info: %s\n", session->session_info);
 	printf("-- URI: %s\n", session->uri);
 	printf("-- email: %s\n", session->email);
 	printf("-- phone: %s\n", session->phone);
 	printf("-- tool: %s\n", session->tool);
 	printf("-- type: %s\n", session->type);
 	printf("-- charset: %s\n", session->charset);
-	printf("-- connection address: %s%s\n", session->connectionAddr,
-		(session->isMulticast) ? " (multicast)" : "");
-	printf("-- control URL: %s\n", session->controlUrl);
+	printf("-- connection address: %s%s\n", session->connection_addr,
+		(session->multicast) ? " (multicast)" : "");
+	printf("-- control URL: %s\n", session->control_url);
 	printf("-- start mode: %s\n",
-		((session->startMode >= 0) &&
-		(session->startMode < SDP_START_MODE_MAX)) ?
-		sdp_start_mode_str[session->startMode] : "unknown");
-	if (session->rtcpXr.valid)
-		printRtcpXrInfo(&session->rtcpXr, "");
+		((session->start_mode >= 0) &&
+		(session->start_mode < SDP_START_MODE_MAX)) ?
+		sdp_start_mode_str[session->start_mode] : "unknown");
+	if (session->rtcp_xr.valid)
+		print_rtcp_xr_info(&session->rtcp_xr, "");
 	struct sdp_attr *attr = NULL;
 	list_walk_entry_forward(&session->attrs, attr, node) {
 		printf("-- attribute %s%s%s\n", attr->key,
@@ -200,7 +201,7 @@ static void printSessionInfo(struct sdp_session *session)
 	}
 	struct sdp_media *media = NULL;
 	list_walk_entry_forward(&session->medias, media, node) {
-		printMediaInfo(media);
+		print_media_info(media);
 	}
 }
 
@@ -229,17 +230,17 @@ int main(int argc, char **argv)
 			ret = EXIT_FAILURE;
 			goto cleanup;
 		}
-		session->sessionId = 123456789;
-		session->sessionVersion = 1;
-		session->serverAddr = strdup("192.168.43.1");
-		session->sessionName = strdup("Bebop2");
-		session->controlUrl = strdup("rtsp://192.168.43.1/video");
-		session->startMode = SDP_START_MODE_RECVONLY;
+		session->session_id = 123456789;
+		session->session_version = 1;
+		session->server_addr = strdup("192.168.43.1");
+		session->session_name = strdup("Bebop2");
+		session->control_url = strdup("rtsp://192.168.43.1/video");
+		session->start_mode = SDP_START_MODE_RECVONLY;
 		session->tool = strdup(argv[0]);
 		session->type = strdup("broadcast");
-		session->rtcpXr.valid = 1;
-		session->rtcpXr.lossRleReport = 1;
-		session->rtcpXr.djbMetricsReport = 1;
+		session->rtcp_xr.valid = 1;
+		session->rtcp_xr.loss_rle_report = 1;
+		session->rtcp_xr.djb_metrics_report = 1;
 
 		media1 = sdp_session_add_media(session);
 		if (media1 == NULL) {
@@ -248,28 +249,28 @@ int main(int argc, char **argv)
 			goto cleanup;
 		}
 		media1->type = SDP_MEDIA_TYPE_VIDEO;
-		media1->mediaTitle = strdup("Front camera");
-		media1->connectionAddr = strdup("239.255.42.1");
-		media1->dstStreamPort = 55004;
-		media1->dstControlPort = 55005;
-		media1->controlUrl = strdup("stream=0");
-		media1->payloadType = 96;
-		media1->encodingName = strdup("H264");
-		media1->clockRate = 90000;
-		media1->h264Fmtp.valid = 1;
-		media1->h264Fmtp.packetizationMode = 1;
-		media1->h264Fmtp.profileIdc = 66;
-		media1->h264Fmtp.profileIop = 0;
-		media1->h264Fmtp.levelIdc = 41;
-		media1->h264Fmtp.sps = malloc(sizeof(sps));
-		if (media1->h264Fmtp.sps) {
-			memcpy(media1->h264Fmtp.sps, sps, sizeof(sps));
-			media1->h264Fmtp.spsSize = sizeof(sps);
+		media1->media_title = strdup("Front camera");
+		media1->connection_addr = strdup("239.255.42.1");
+		media1->dst_stream_port = 55004;
+		media1->dst_control_port = 55005;
+		media1->control_url = strdup("stream=0");
+		media1->payload_type = 96;
+		media1->encoding_name = strdup("H264");
+		media1->clock_rate = 90000;
+		media1->h264_fmtp.valid = 1;
+		media1->h264_fmtp.packetization_mode = 1;
+		media1->h264_fmtp.profile_idc = 66;
+		media1->h264_fmtp.profile_iop = 0;
+		media1->h264_fmtp.level_idc = 41;
+		media1->h264_fmtp.sps = malloc(sizeof(sps));
+		if (media1->h264_fmtp.sps) {
+			memcpy(media1->h264_fmtp.sps, sps, sizeof(sps));
+			media1->h264_fmtp.sps_size = sizeof(sps);
 		}
-		media1->h264Fmtp.pps = malloc(sizeof(pps));
-		if (media1->h264Fmtp.pps) {
-			memcpy(media1->h264Fmtp.pps, pps, sizeof(pps));
-			media1->h264Fmtp.ppsSize = sizeof(pps);
+		media1->h264_fmtp.pps = malloc(sizeof(pps));
+		if (media1->h264_fmtp.pps) {
+			memcpy(media1->h264_fmtp.pps, pps, sizeof(pps));
+			media1->h264_fmtp.pps_size = sizeof(pps);
 		}
 
 		media2 = sdp_session_add_media(session);
@@ -279,28 +280,28 @@ int main(int argc, char **argv)
 			goto cleanup;
 		}
 		media2->type = SDP_MEDIA_TYPE_VIDEO;
-		media2->mediaTitle = strdup("Vertical camera");
-		media2->connectionAddr = strdup("239.255.42.1");
-		media2->dstStreamPort = 55006;
-		media2->dstControlPort = 55007;
-		media2->controlUrl = strdup("stream=1");
-		media2->payloadType = 96;
-		media2->encodingName = strdup("H264");
-		media2->clockRate = 90000;
-		media2->h264Fmtp.valid = 1;
-		media2->h264Fmtp.packetizationMode = 1;
-		media2->h264Fmtp.profileIdc = 66;
-		media2->h264Fmtp.profileIop = 0;
-		media2->h264Fmtp.levelIdc = 41;
-		media2->h264Fmtp.sps = malloc(sizeof(sps));
-		if (media2->h264Fmtp.sps) {
-			memcpy(media2->h264Fmtp.sps, sps, sizeof(sps));
-			media2->h264Fmtp.spsSize = sizeof(sps);
+		media2->media_title = strdup("Vertical camera");
+		media2->connection_addr = strdup("239.255.42.1");
+		media2->dst_stream_port = 55006;
+		media2->dst_control_port = 55007;
+		media2->control_url = strdup("stream=1");
+		media2->payload_type = 96;
+		media2->encoding_name = strdup("H264");
+		media2->clock_rate = 90000;
+		media2->h264_fmtp.valid = 1;
+		media2->h264_fmtp.packetization_mode = 1;
+		media2->h264_fmtp.profile_idc = 66;
+		media2->h264_fmtp.profile_iop = 0;
+		media2->h264_fmtp.level_idc = 41;
+		media2->h264_fmtp.sps = malloc(sizeof(sps));
+		if (media2->h264_fmtp.sps) {
+			memcpy(media2->h264_fmtp.sps, sps, sizeof(sps));
+			media2->h264_fmtp.sps_size = sizeof(sps);
 		}
-		media2->h264Fmtp.pps = malloc(sizeof(pps));
-		if (media2->h264Fmtp.pps) {
-			memcpy(media2->h264Fmtp.pps, pps, sizeof(pps));
-			media2->h264Fmtp.ppsSize = sizeof(pps);
+		media2->h264_fmtp.pps = malloc(sizeof(pps));
+		if (media2->h264_fmtp.pps) {
+			memcpy(media2->h264_fmtp.pps, pps, sizeof(pps));
+			media2->h264_fmtp.pps_size = sizeof(pps);
 		}
 
 		sdp = sdp_generate_session_description(session, 0);
@@ -320,16 +321,16 @@ int main(int argc, char **argv)
 			goto cleanup;
 		}
 		fseek(f, 0, SEEK_END);
-		int fileSize = ftell(f);
+		int file_size = ftell(f);
 		fseek(f, 0, SEEK_SET);
-		sdp = malloc(fileSize);
+		sdp = malloc(file_size);
 		if (!sdp) {
 			fprintf(stderr, "allocation failed (size %d)\n",
-				fileSize);
+				file_size);
 			ret = EXIT_FAILURE;
 			goto cleanup;
 		}
-		int err = fread(sdp, fileSize, 1, f);
+		int err = fread(sdp, file_size, 1, f);
 		if (err != 1) {
 			fprintf(stderr, "failed to read from the input file\n");
 			ret = EXIT_FAILURE;
@@ -345,7 +346,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("\n");
-	printSessionInfo(session2);
+	print_session_info(session2);
 
 cleanup:
 	free(sdp);

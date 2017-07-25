@@ -85,59 +85,59 @@ struct sdp_attr {
 /* H.264 payload format parameters (see RFC 6184) */
 struct sdp_h264_fmtp {
 	int valid;
-	unsigned int packetizationMode;
-	unsigned int profileIdc;
-	unsigned int profileIop;
-	unsigned int levelIdc;
+	unsigned int packetization_mode;
+	unsigned int profile_idc;
+	unsigned int profile_iop;
+	unsigned int level_idc;
 	uint8_t *sps;
-	unsigned int spsSize;
+	unsigned int sps_size;
 	uint8_t *pps;
-	unsigned int ppsSize;
+	unsigned int pps_size;
 };
 
 
 /* RFC 3611 and RFC 7005 RTCP extended reports */
 struct sdp_rtcp_xr {
 	int valid;
-	int lossRleReport;
-	unsigned int lossRleReportMaxSize;
-	int dupRleReport;
-	unsigned int dupRleReportMaxSize;
-	int pktReceiptTimesReport;
-	unsigned int pktReceiptTimesReportMaxSize;
-	enum sdp_rtcp_xr_rtt_report_mode rttReport;
-	unsigned int rttReportMaxSize;
-	int statsSummaryReportLoss;
-	int statsSummaryReportDup;
-	int statsSummaryReportJitter;
-	int statsSummaryReportTtl;
-	int statsSummaryReportHl;
-	int djbMetricsReport;
+	int loss_rle_report;
+	unsigned int loss_rle_report_max_size;
+	int dup_rle_report;
+	unsigned int dup_rle_report_max_size;
+	int pkt_receipt_times_report;
+	unsigned int pkt_receipt_times_report_max_size;
+	enum sdp_rtcp_xr_rtt_report_mode rtt_report;
+	unsigned int rtt_report_max_size;
+	int stats_summary_report_loss;
+	int stats_summary_report_dup;
+	int stats_summary_report_jitter;
+	int stats_summary_report_ttl;
+	int stats_summary_report_hl;
+	int djb_metrics_report;
 };
 
 
 struct sdp_media {
 	enum sdp_media_type type;
-	char *mediaTitle;
-	char *connectionAddr;
-	int isMulticast;
-	unsigned int dstStreamPort;
-	unsigned int dstControlPort;
-	unsigned int payloadType;
-	char *controlUrl;
-	enum sdp_start_mode startMode;
+	char *media_title;
+	char *connection_addr;
+	int multicast;
+	unsigned int dst_stream_port;
+	unsigned int dst_control_port;
+	unsigned int payload_type;
+	char *control_url;
+	enum sdp_start_mode start_mode;
 
 	/* RTP/AVP rtpmap attribute */
-	char *encodingName;
-	char *encodingParams;
-	unsigned int clockRate;
+	char *encoding_name;
+	char *encoding_params;
+	unsigned int clock_rate;
 
 	/* H.264 payload format parameters */
-	struct sdp_h264_fmtp h264Fmtp;
+	struct sdp_h264_fmtp h264_fmtp;
 
-	struct sdp_rtcp_xr rtcpXr;
+	struct sdp_rtcp_xr rtcp_xr;
 
-	unsigned int attrCount;
+	unsigned int attr_count;
 	struct list_node attrs;
 
 	struct list_node node;
@@ -145,25 +145,25 @@ struct sdp_media {
 
 
 struct sdp_session {
-	uint64_t sessionId;
-	uint64_t sessionVersion;
-	char *serverAddr;
-	char *sessionName;
-	char *sessionInfo;
+	uint64_t session_id;
+	uint64_t session_version;
+	char *server_addr;
+	char *session_name;
+	char *session_info;
 	char *uri;
 	char *email;
 	char *phone;
 	char *tool;
 	char *type;
 	char *charset;
-	char *connectionAddr;
-	int isMulticast;
-	char *controlUrl;
-	enum sdp_start_mode startMode;
-	struct sdp_rtcp_xr rtcpXr;
-	unsigned int attrCount;
+	char *connection_addr;
+	int multicast;
+	char *control_url;
+	enum sdp_start_mode start_mode;
+	struct sdp_rtcp_xr rtcp_xr;
+	unsigned int attr_count;
 	struct list_node attrs;
-	unsigned int mediaCount;
+	unsigned int media_count;
 	struct list_node medias;
 };
 
@@ -209,7 +209,7 @@ char *sdp_generate_session_description(
 
 
 struct sdp_session *sdp_parse_session_description(
-	const char *sessionDescription);
+	const char *session_desc);
 
 
 #ifdef __cplusplus
