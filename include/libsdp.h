@@ -181,40 +181,40 @@ int sdp_session_destroy(
 	struct sdp_session *session);
 
 
-struct sdp_attr *sdp_session_add_attr(
+struct sdp_attr *sdp_session_attr_add(
 	struct sdp_session *session);
 
 
-int sdp_session_remove_attr(
+int sdp_session_attr_remove(
 	struct sdp_session *session,
 	struct sdp_attr *attr);
 
 
-struct sdp_media *sdp_session_add_media(
+struct sdp_media *sdp_session_media_add(
 	struct sdp_session *session);
 
 
-int sdp_session_remove_media(
+int sdp_session_media_remove(
 	struct sdp_session *session,
 	struct sdp_media *media);
 
 
-struct sdp_attr *sdp_media_add_attr(
+struct sdp_attr *sdp_media_attr_add(
 	struct sdp_media *media);
 
 
-int sdp_media_remove_attr(
+int sdp_media_attr_remove(
 	struct sdp_media *media,
 	struct sdp_attr *attr);
 
 
-char *sdp_generate_session_description(
+struct sdp_session *sdp_description_read(
+	const char *session_desc);
+
+
+char *sdp_description_write(
 	const struct sdp_session *session,
 	int deletion);
-
-
-struct sdp_session *sdp_parse_session_description(
-	const char *session_desc);
 
 
 #ifdef __cplusplus

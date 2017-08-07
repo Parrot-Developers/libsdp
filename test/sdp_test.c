@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 		session->rtcp_xr.loss_rle_report = 1;
 		session->rtcp_xr.djb_metrics_report = 1;
 
-		media1 = sdp_session_add_media(session);
+		media1 = sdp_session_media_add(session);
 		if (media1 == NULL) {
 			fprintf(stderr, "failed to create media #1\n");
 			ret = EXIT_FAILURE;
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
 			media1->h264_fmtp.pps_size = sizeof(pps);
 		}
 
-		media2 = sdp_session_add_media(session);
+		media2 = sdp_session_media_add(session);
 		if (media2 == NULL) {
 			fprintf(stderr, "failed to create media #2\n");
 			ret = EXIT_FAILURE;
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
 			media2->h264_fmtp.pps_size = sizeof(pps);
 		}
 
-		sdp = sdp_generate_session_description(session, 0);
+		sdp = sdp_description_write(session, 0);
 		if (sdp == NULL) {
 			fprintf(stderr, "failed to generate"
 				" the session desciption\n");
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	session2 = sdp_parse_session_description(sdp);
+	session2 = sdp_description_read(sdp);
 	if (session2 == NULL) {
 		fprintf(stderr, "failed to parse the session description\n");
 		ret = EXIT_FAILURE;

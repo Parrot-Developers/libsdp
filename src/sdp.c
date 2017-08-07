@@ -84,18 +84,18 @@ int sdp_session_destroy(
 	/* remove all attibutes */
 	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
 	list_walk_entry_forward_safe(&session->attrs, attr, tmp_attr, node) {
-		int ret = sdp_session_remove_attr(session, attr);
+		int ret = sdp_session_attr_remove(session, attr);
 		if (ret != 0)
-			SDP_LOGE("sdp_session_remove_attr() failed: %d(%s)",
+			SDP_LOGE("sdp_session_attr_remove() failed: %d(%s)",
 				ret, strerror(-ret));
 	}
 
 	/* remove all media */
 	struct sdp_media *media = NULL, *tmp_media = NULL;
 	list_walk_entry_forward_safe(&session->medias, media, tmp_media, node) {
-		int ret = sdp_session_remove_media(session, media);
+		int ret = sdp_session_media_remove(session, media);
 		if (ret != 0)
-			SDP_LOGE("sdp_session_remove_media() failed: %d(%s)",
+			SDP_LOGE("sdp_session_media_remove() failed: %d(%s)",
 				ret, strerror(-ret));
 	}
 
@@ -116,7 +116,7 @@ int sdp_session_destroy(
 }
 
 
-struct sdp_attr *sdp_session_add_attr(
+struct sdp_attr *sdp_session_attr_add(
 	struct sdp_session *session)
 {
 	SDP_RETURN_VAL_IF_FAILED(session != NULL, -EINVAL, NULL);
@@ -133,7 +133,7 @@ struct sdp_attr *sdp_session_add_attr(
 }
 
 
-int sdp_session_remove_attr(
+int sdp_session_attr_remove(
 	struct sdp_session *session,
 	struct sdp_attr *attr)
 {
@@ -166,7 +166,7 @@ int sdp_session_remove_attr(
 }
 
 
-struct sdp_media *sdp_session_add_media(
+struct sdp_media *sdp_session_media_add(
 	struct sdp_session *session)
 {
 	SDP_RETURN_VAL_IF_FAILED(session != NULL, -EINVAL, NULL);
@@ -184,7 +184,7 @@ struct sdp_media *sdp_session_add_media(
 }
 
 
-int sdp_session_remove_media(
+int sdp_session_media_remove(
 	struct sdp_session *session,
 	struct sdp_media *media)
 {
@@ -208,9 +208,9 @@ int sdp_session_remove_media(
 	/* remove all attibutes */
 	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
 	list_walk_entry_forward_safe(&media->attrs, attr, tmp_attr, node) {
-		int ret = sdp_media_remove_attr(media, attr);
+		int ret = sdp_media_attr_remove(media, attr);
 		if (ret != 0)
-			SDP_LOGE("sdp_media_remove_attr() failed: %d(%s)",
+			SDP_LOGE("sdp_media_attr_remove() failed: %d(%s)",
 				ret, strerror(-ret));
 	}
 
@@ -231,7 +231,7 @@ int sdp_session_remove_media(
 }
 
 
-struct sdp_attr *sdp_media_add_attr(
+struct sdp_attr *sdp_media_attr_add(
 	struct sdp_media *media)
 {
 	SDP_RETURN_VAL_IF_FAILED(media != NULL, -EINVAL, NULL);
@@ -247,7 +247,7 @@ struct sdp_attr *sdp_media_add_attr(
 }
 
 
-int sdp_media_remove_attr(
+int sdp_media_attr_remove(
 	struct sdp_media *media,
 	struct sdp_attr *attr)
 {
@@ -278,7 +278,7 @@ int sdp_media_remove_attr(
 }
 
 
-static int sdp_generate_h264_fmtp(
+static int sdp_h264_fmtp_write(
 	const struct sdp_h264_fmtp *fmtp,
 	unsigned int payload_type,
 	char *sdp,
@@ -337,7 +337,7 @@ static int sdp_generate_h264_fmtp(
 }
 
 
-static int sdp_parse_h264_fmtp(
+static int sdp_h264_fmtp_read(
 	struct sdp_h264_fmtp *fmtp,
 	char *value)
 {
@@ -409,7 +409,7 @@ static int sdp_parse_h264_fmtp(
 }
 
 
-static int sdp_generate_rtcp_xr_attr(
+static int sdp_rtcp_xr_attr_write(
 	const struct sdp_rtcp_xr *xr,
 	char *sdp,
 	int sdp_max_len)
@@ -563,7 +563,7 @@ static int sdp_generate_rtcp_xr_attr(
 }
 
 
-static int sdp_parse_rtcp_xr_attr(
+static int sdp_rtcp_xr_attr_read(
 	struct sdp_rtcp_xr *xr,
 	char *value)
 {
@@ -670,7 +670,7 @@ static int sdp_parse_rtcp_xr_attr(
 }
 
 
-static int sdp_parse_attr(
+static int sdp_attr_read(
 	struct sdp_attr *attr,
 	struct sdp_session *session,
 	struct sdp_media *media,
@@ -743,9 +743,9 @@ static int sdp_parse_attr(
 		if ((media->encoding_name) && (!strncmp(media->encoding_name,
 			SDP_ENCODING_H264, strlen(SDP_ENCODING_H264)))) {
 			fmtp = strtok_r(NULL, "", &temp3);
-			ret = sdp_parse_h264_fmtp(&media->h264_fmtp, fmtp);
+			ret = sdp_h264_fmtp_read(&media->h264_fmtp, fmtp);
 			if (ret < 0) {
-				SDP_LOGW("sdp_parse_h264_fmtp()"
+				SDP_LOGW("sdp_h264_fmtp_read()"
 					" failed (%d)", ret);
 			}
 		}
@@ -818,13 +818,13 @@ static int sdp_parse_attr(
 		strlen(SDP_ATTR_RTCP_XR))) && (attr_value)) {
 		/* a=rtcp-xr */
 		if (media)
-			ret = sdp_parse_rtcp_xr_attr(
+			ret = sdp_rtcp_xr_attr_read(
 				&media->rtcp_xr, attr_value);
 		else
-			ret = sdp_parse_rtcp_xr_attr(
+			ret = sdp_rtcp_xr_attr_read(
 				&session->rtcp_xr, attr_value);
 		if (ret < 0) {
-			SDP_LOGW("sdp_parse_rtcp_xr_attr()"
+			SDP_LOGW("sdp_rtcp_xr_attr_read()"
 				" failed (%d)", ret);
 		}
 
@@ -844,7 +844,7 @@ static int sdp_parse_attr(
 }
 
 
-static int sdp_generate_media(
+static int sdp_media_write(
 	const struct sdp_media *media,
 	char *sdp,
 	int sdp_max_len,
@@ -938,11 +938,11 @@ static int sdp_generate_media(
 	if (!strncmp(media->encoding_name,
 		SDP_ENCODING_H264, strlen(SDP_ENCODING_H264)) &&
 		(media->h264_fmtp.valid)) {
-		ret = sdp_generate_h264_fmtp(
+		ret = sdp_h264_fmtp_write(
 			&media->h264_fmtp, media->payload_type,
 			sdp + sdp_len, sdp_max_len - sdp_len);
 		if (ret < 0) {
-			SDP_LOGE("sdp_generate_h264_fmtp()"
+			SDP_LOGE("sdp_h264_fmtp_write()"
 				" failed (%d)", ret);
 			error = 1;
 		} else
@@ -959,10 +959,10 @@ static int sdp_generate_media(
 
 	/* RTCP extended reports attribute (a=rtcp-xr) */
 	if (media->rtcp_xr.valid) {
-		ret = sdp_generate_rtcp_xr_attr(&media->rtcp_xr,
+		ret = sdp_rtcp_xr_attr_write(&media->rtcp_xr,
 			sdp + sdp_len, sdp_max_len - sdp_len);
 		if (ret < 0) {
-			SDP_LOGE("sdp_generate_rtcp_xr_attr()"
+			SDP_LOGE("sdp_rtcp_xr_attr_write()"
 				" failed (%d)", ret);
 			error = 1;
 		} else
@@ -991,7 +991,7 @@ static int sdp_generate_media(
 }
 
 
-static int sdp_parse_media(
+static int sdp_media_read(
 	struct sdp_media *media,
 	char *value)
 {
@@ -1037,7 +1037,7 @@ static int sdp_parse_media(
 }
 
 
-char *sdp_generate_session_description(
+char *sdp_description_write(
 	const struct sdp_session *session,
 	int deletion)
 {
@@ -1191,10 +1191,10 @@ char *sdp_generate_session_description(
 
 	/* RTCP extended reports attribute (a=rtcp-xr) */
 	if (session->rtcp_xr.valid) {
-		ret = sdp_generate_rtcp_xr_attr(&session->rtcp_xr,
+		ret = sdp_rtcp_xr_attr_write(&session->rtcp_xr,
 			sdp + sdp_len, sdp_max_len - sdp_len);
 		if (ret < 0) {
-			SDP_LOGE("sdp_generate_rtcp_xr_attr()"
+			SDP_LOGE("sdp_rtcp_xr_attr_write()"
 				" failed (%d)", ret);
 			error = 1;
 		} else
@@ -1224,11 +1224,11 @@ char *sdp_generate_session_description(
 	/* media (m=...) */
 	struct sdp_media *media = NULL;
 	list_walk_entry_forward(&session->medias, media, node) {
-		ret = sdp_generate_media(
+		ret = sdp_media_write(
 			media, sdp + sdp_len, sdp_max_len - sdp_len,
 			session_level_connection_addr);
 		if (ret < 0) {
-			SDP_LOGE("sdp_generate_media()"
+			SDP_LOGE("sdp_media_write()"
 				" failed (%d)", ret);
 			error = 1;
 			break;
@@ -1245,7 +1245,7 @@ char *sdp_generate_session_description(
 }
 
 
-struct sdp_session *sdp_parse_session_description(
+struct sdp_session *sdp_description_read(
 	const char *session_desc)
 {
 	SDP_RETURN_VAL_IF_FAILED(session_desc != NULL, -EINVAL, NULL);
@@ -1461,15 +1461,15 @@ struct sdp_session *sdp_parse_session_description(
 		case SDP_TYPE_MEDIA:
 		{
 			/* media (m=...) */
-			media = sdp_session_add_media(session);
+			media = sdp_session_media_add(session);
 			if (media == NULL) {
-				SDP_LOGW("sdp_session_add_media() failed");
+				SDP_LOGW("sdp_session_media_add() failed");
 				error = 1;
 				goto cleanup;
 			}
-			ret = sdp_parse_media(media, value);
+			ret = sdp_media_read(media, value);
 			if (ret < 0) {
-				SDP_LOGW("sdp_parse_media()"
+				SDP_LOGW("sdp_media_read()"
 					" failed (%d)", ret);
 				error = 1;
 				goto cleanup;
@@ -1482,25 +1482,25 @@ struct sdp_session *sdp_parse_session_description(
 			/* attributes (a=...) */
 			struct sdp_attr *attr = NULL;
 			if (media) {
-				attr = sdp_media_add_attr(media);
+				attr = sdp_media_attr_add(media);
 				if (attr == NULL) {
-					SDP_LOGW("sdp_media_add_attr() failed");
+					SDP_LOGW("sdp_media_attr_add() failed");
 					error = 1;
 					goto cleanup;
 				}
 			} else {
-				attr = sdp_session_add_attr(session);
+				attr = sdp_session_attr_add(session);
 				if (attr == NULL) {
-					SDP_LOGW("sdp_session_add_attr()"
+					SDP_LOGW("sdp_session_attr_add()"
 						" failed");
 					error = 1;
 					goto cleanup;
 				}
 			}
 
-			ret = sdp_parse_attr(attr, session, media, value);
+			ret = sdp_attr_read(attr, session, media, value);
 			if (ret < 0) {
-				SDP_LOGW("sdp_parse_attr() failed (%d)", ret);
+				SDP_LOGW("sdp_attr_read() failed (%d)", ret);
 				error = 1;
 				goto cleanup;
 			}
