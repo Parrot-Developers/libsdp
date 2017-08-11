@@ -16,7 +16,6 @@ LOCAL_SRC_FILES := \
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_LIBRARIES := libfutils
 LOCAL_CONDITIONAL_LIBRARIES := OPTIONAL:libulog
-LOCAL_CFLAGS := -Wextra
 
 include $(BUILD_LIBRARY)
 
@@ -30,5 +29,4 @@ LOCAL_DESCRIPTION := Session Description Protocol library test program
 LOCAL_CATEGORY_PATH := multimedia
 LOCAL_SRC_FILES := test/sdp_test.c
 LOCAL_LIBRARIES := libsdp libulog
-LOCAL_CFLAGS := -Wextra
 include $(BUILD_EXECUTABLE)
