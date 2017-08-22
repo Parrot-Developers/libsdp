@@ -140,15 +140,14 @@ static void print_media_info(struct sdp_media *media)
 
 	printf("-- Media\n");
 	printf("   -- type: %s\n",
-		((media->type >= 0) && (media->type < SDP_MEDIA_TYPE_MAX)) ?
+		(media->type < SDP_MEDIA_TYPE_MAX) ?
 		sdp_media_type_str[media->type] : "unknown");
 	printf("   -- media title: %s\n", media->media_title);
 	printf("   -- connection address: %s%s\n", media->connection_addr,
 		(media->multicast) ? " (multicast)" : "");
 	printf("   -- control URL: %s\n", media->control_url);
 	printf("   -- start mode: %s\n",
-		((media->start_mode >= 0) &&
-		(media->start_mode < SDP_START_MODE_MAX)) ?
+		(media->start_mode < SDP_START_MODE_MAX) ?
 		sdp_start_mode_str[media->start_mode] : "unknown");
 	printf("   -- stream port: %d\n", media->dst_stream_port);
 	printf("   -- control port: %d\n", media->dst_control_port);
@@ -190,8 +189,7 @@ static void print_session_info(struct sdp_session *session)
 		(session->multicast) ? " (multicast)" : "");
 	printf("-- control URL: %s\n", session->control_url);
 	printf("-- start mode: %s\n",
-		((session->start_mode >= 0) &&
-		(session->start_mode < SDP_START_MODE_MAX)) ?
+		(session->start_mode < SDP_START_MODE_MAX) ?
 		sdp_start_mode_str[session->start_mode] : "unknown");
 	if (session->rtcp_xr.valid)
 		print_rtcp_xr_info(&session->rtcp_xr, "");

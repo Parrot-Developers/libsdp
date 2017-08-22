@@ -42,11 +42,14 @@
 #include <libsdp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 
 #include "sdp_log.h"
 
+
+#define SDP_MAX_LEN 1024
 
 #define SDP_NTP_TO_UNIX_OFFSET 2208988800ULL
 
@@ -107,6 +110,24 @@
 
 #define SDP_MULTICAST_ADDR_MIN 224
 #define SDP_MULTICAST_ADDR_MAX 239
+
+
+struct sdp_string {
+	char *str;
+	unsigned int len;
+	unsigned int max_len;
+};
+
+
+__attribute__((__format__(__printf__, 2, 3)))
+static inline void sdp_sprintf(struct sdp_string *str, const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	str->len += vsnprintf(
+		str->str + str->len, str->max_len - str->len, fmt, args);
+	va_end(args);
+}
 
 
 int sdp_base64_encode(const void *data, size_t size, char **out);
