@@ -1,29 +1,29 @@
 /**
-* Copyright (c) 2017 Parrot Drones SAS
-* Copyright (c) 2017 Aurelien Barre
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*   * Neither the name of the Parrot Drones SAS Company nor the
-*     names of its contributors may be used to endorse or promote products
-*     derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE PARROT DRONES SAS COMPANY BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2017 Parrot Drones SAS
+ * Copyright (c) 2017 Aurelien Barre
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *   * Neither the name of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "sdp.h"
 
@@ -45,14 +45,14 @@ static inline char encode_char(unsigned val)
 
 int sdp_base64_encode(const void *data, size_t size, char **out)
 {
-	SDP_RETURN_ERR_IF_FAILED(data != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(size != 0, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(out != NULL, -EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(data == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(size == 0, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(out == NULL, EINVAL);
 
 	const uint8_t *_data = (const uint8_t *)data;
 	size_t out_size = (size / 3) * 4 + ((size % 3) ? 4 : 0);
 	char *_out = calloc(out_size + 1, sizeof(char));
-	SDP_RETURN_ERR_IF_FAILED(_out != NULL, -ENOMEM);
+	ULOG_ERRNO_RETURN_ERR_IF(_out == NULL, ENOMEM);
 
 	size_t i;
 	char *t = _out;
@@ -69,8 +69,7 @@ int sdp_base64_encode(const void *data, size_t size, char **out)
 	switch (size % 3) {
 	default:
 		break;
-	case 1:
-	{
+	case 1: {
 		uint8_t x1 = _data[i];
 		*t++ = encode_char(x1 >> 2);
 		*t++ = encode_char((x1 << 4) & 0x3f);
@@ -78,8 +77,7 @@ int sdp_base64_encode(const void *data, size_t size, char **out)
 		*t++ = '=';
 		break;
 	}
-	case 2:
-	{
+	case 2: {
 		uint8_t x1 = _data[i];
 		uint8_t x2 = _data[i + 1];
 		*t++ = encode_char(x1 >> 2);
@@ -90,7 +88,7 @@ int sdp_base64_encode(const void *data, size_t size, char **out)
 	}
 	}
 
-	/* string is already null-terminated (calloc) */
+	/* String is already null-terminated (calloc) */
 	*out = _out;
 	return 0;
 }
@@ -98,12 +96,12 @@ int sdp_base64_encode(const void *data, size_t size, char **out)
 
 int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 {
-	SDP_RETURN_ERR_IF_FAILED(out != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(out_size != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(str != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(strlen(str) != 0, -EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(out == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(out_size == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(str == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(strlen(str) == 0, EINVAL);
 	size_t n = strlen(str);
-	SDP_RETURN_ERR_IF_FAILED((n % 4) == 0, -EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF((n % 4) != 0, EINVAL);
 
 	size_t padding = 0;
 	if ((n >= 1) && (str[n - 1] == '=')) {
@@ -117,7 +115,7 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 
 	size_t out_len = (n / 4) * 3 - padding;
 	uint8_t *_out = calloc(out_len, 1);
-	SDP_RETURN_ERR_IF_FAILED(_out != NULL, -ENOMEM);
+	ULOG_ERRNO_RETURN_ERR_IF(_out == NULL, ENOMEM);
 
 	size_t i, j = 0;
 	uint32_t acc = 0;
@@ -155,6 +153,6 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 
 error:
 	free(_out);
-	SDP_RETURN_ERR_IF_FAILED(0, -EINVAL);
+	ULOGE("%s: invalid input base64 string", __func__);
 	return -EINVAL;
 }

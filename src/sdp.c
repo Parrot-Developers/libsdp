@@ -1,64 +1,131 @@
 /**
-* Copyright (c) 2017 Parrot Drones SAS
-* Copyright (c) 2017 Aurelien Barre
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*   * Neither the name of the Parrot Drones SAS Company nor the
-*     names of its contributors may be used to endorse or promote products
-*     derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE PARROT DRONES SAS COMPANY BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2017 Parrot Drones SAS
+ * Copyright (c) 2017 Aurelien Barre
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *   * Neither the name of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "sdp.h"
 
 
-static const char *const sdp_media_type_str[SDP_MEDIA_TYPE_MAX] = {
-	[SDP_MEDIA_TYPE_AUDIO] = "audio",
-	[SDP_MEDIA_TYPE_VIDEO] = "video",
-	[SDP_MEDIA_TYPE_TEXT] = "text",
-	[SDP_MEDIA_TYPE_APPLICATION] = "application",
-	[SDP_MEDIA_TYPE_MESSAGE] = "message",
-};
+ULOG_DECLARE_TAG(sdp);
 
 
-static const char *const sdp_start_mode_str[SDP_START_MODE_MAX] = {
-	[SDP_START_MODE_UNSPECIFIED] = "unspecified",
-	[SDP_START_MODE_RECVONLY] = SDP_ATTR_RECVONLY,
-	[SDP_START_MODE_SENDRECV] = SDP_ATTR_SENDRECV,
-	[SDP_START_MODE_SENDONLY] = SDP_ATTR_SENDONLY,
-	[SDP_START_MODE_INACTIVE] = SDP_ATTR_INACTIVE,
-};
+const char *sdp_media_type_str(enum sdp_media_type val)
+{
+	switch (val) {
+	case SDP_MEDIA_TYPE_AUDIO:
+		return "audio";
+	case SDP_MEDIA_TYPE_VIDEO:
+		return "video";
+	case SDP_MEDIA_TYPE_TEXT:
+		return "text";
+	case SDP_MEDIA_TYPE_APPLICATION:
+		return "application";
+	case SDP_MEDIA_TYPE_MESSAGE:
+		return "message";
+	default:
+		return "unknown";
+	}
+}
 
 
-static const char *const sdp_rtcp_xr_rtt_report_mode_str[
-	SDP_RTCP_XR_RTT_REPORT_MAX] = {
-	[SDP_RTCP_XR_RTT_REPORT_NONE] = "none",
-	[SDP_RTCP_XR_RTT_REPORT_ALL] = "all",
-	[SDP_RTCP_XR_RTT_REPORT_SENDER] = "sender",
-};
+static int sdp_media_type_from_str(const char *str, enum sdp_media_type *type)
+{
+	if (strcmp(str, "audio") == 0) {
+		*type = SDP_MEDIA_TYPE_AUDIO;
+		return 0;
+	} else if (strcmp(str, "video") == 0) {
+		*type = SDP_MEDIA_TYPE_VIDEO;
+		return 0;
+	} else if (strcmp(str, "text") == 0) {
+		*type = SDP_MEDIA_TYPE_TEXT;
+		return 0;
+	} else if (strcmp(str, "application") == 0) {
+		*type = SDP_MEDIA_TYPE_APPLICATION;
+		return 0;
+	} else if (strcmp(str, "message") == 0) {
+		*type = SDP_MEDIA_TYPE_MESSAGE;
+		return 0;
+	}
+	return -EINVAL;
+}
 
 
-struct sdp_session *sdp_session_new(
-	void)
+const char *sdp_start_mode_str(enum sdp_start_mode val)
+{
+	switch (val) {
+	default:
+	case SDP_START_MODE_UNSPECIFIED:
+		return "unspecified";
+	case SDP_START_MODE_RECVONLY:
+		return SDP_ATTR_RECVONLY;
+	case SDP_START_MODE_SENDRECV:
+		return SDP_ATTR_SENDRECV;
+	case SDP_START_MODE_SENDONLY:
+		return SDP_ATTR_SENDONLY;
+	case SDP_START_MODE_INACTIVE:
+		return SDP_ATTR_INACTIVE;
+	}
+}
+
+
+const char *
+sdp_rtcp_xr_rtt_report_mode_str(enum sdp_rtcp_xr_rtt_report_mode val)
+{
+	switch (val) {
+	case SDP_RTCP_XR_RTT_REPORT_NONE:
+		return SDP_RTCP_XR_RTT_REPORT_NONE_STR;
+	case SDP_RTCP_XR_RTT_REPORT_ALL:
+		return SDP_RTCP_XR_RTT_REPORT_ALL_STR;
+	case SDP_RTCP_XR_RTT_REPORT_SENDER:
+		return SDP_RTCP_XR_RTT_REPORT_SENDER_STR;
+	default:
+		return "unknown";
+	}
+}
+
+
+const char *sdp_time_format_str(enum sdp_time_format val)
+{
+	switch (val) {
+	case SDP_TIME_FORMAT_NPT:
+		return "NPT";
+	case SDP_TIME_FORMAT_SMPTE:
+		return "SMPTE";
+	case SDP_TIME_FORMAT_ABSOLUTE:
+		return "ABSOLUTE";
+	default:
+	case SDP_TIME_FORMAT_UNKNOWN:
+		return "UNKNOWN";
+	}
+}
+
+
+struct sdp_session *sdp_session_new(void)
 {
 	struct sdp_session *session = calloc(1, sizeof(*session));
-	SDP_RETURN_VAL_IF_FAILED(session != NULL, -ENOMEM, NULL);
+	ULOG_ERRNO_RETURN_VAL_IF(session == NULL, ENOMEM, NULL);
 	list_init(&session->attrs);
 	list_init(&session->medias);
 
@@ -66,27 +133,24 @@ struct sdp_session *sdp_session_new(
 }
 
 
-int sdp_session_destroy(
-	struct sdp_session *session)
+int sdp_session_destroy(struct sdp_session *session)
 {
-	SDP_RETURN_ERR_IF_FAILED(session != NULL, -EINVAL);
-
-	/* remove all attibutes */
 	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
-	list_walk_entry_forward_safe(&session->attrs, attr, tmp_attr, node) {
-		int ret = sdp_session_attr_remove(session, attr);
-		if (ret != 0)
-			SDP_LOGE("sdp_session_attr_remove() failed: %d(%s)",
-				ret, strerror(-ret));
+	struct sdp_media *media = NULL, *tmp_media = NULL;
+
+	if (session == NULL)
+		return 0;
+
+	/* Remove all attibutes */
+	list_walk_entry_forward_safe(&session->attrs, attr, tmp_attr, node)
+	{
+		sdp_session_attr_remove(session, attr);
 	}
 
-	/* remove all media */
-	struct sdp_media *media = NULL, *tmp_media = NULL;
-	list_walk_entry_forward_safe(&session->medias, media, tmp_media, node) {
-		int ret = sdp_session_media_remove(session, media);
-		if (ret != 0)
-			SDP_LOGE("sdp_session_media_remove() failed: %d(%s)",
-				ret, strerror(-ret));
+	/* Remove all media */
+	list_walk_entry_forward_safe(&session->medias, media, tmp_media, node)
+	{
+		sdp_session_media_remove(session, media);
 	}
 
 	free(session->server_addr);
@@ -106,107 +170,152 @@ int sdp_session_destroy(
 }
 
 
-struct sdp_attr *sdp_session_attr_add(
-	struct sdp_session *session)
+int sdp_session_copy(const struct sdp_session *src, struct sdp_session *dst)
 {
-	SDP_RETURN_VAL_IF_FAILED(session != NULL, -EINVAL, NULL);
+	struct sdp_attr *attr, *_attr = NULL;
+	struct sdp_media *media, *_media = NULL;
+	int err;
 
-	struct sdp_attr *attr = calloc(1, sizeof(*attr));
-	SDP_RETURN_VAL_IF_FAILED(attr != NULL, -ENOMEM, NULL);
-	list_node_unref(&attr->node);
+	ULOG_ERRNO_RETURN_ERR_IF(src == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(dst == NULL, EINVAL);
 
-	/* add to the list */
-	list_add_after(list_last(&session->attrs), &attr->node);
-	session->attr_count++;
+	dst->session_id = src->session_id;
+	dst->session_version = src->session_version;
+	dst->server_addr = xstrdup(src->server_addr);
+	dst->session_name = xstrdup(src->session_name);
+	dst->session_info = xstrdup(src->session_info);
+	dst->uri = xstrdup(src->uri);
+	dst->email = xstrdup(src->email);
+	dst->phone = xstrdup(src->phone);
+	dst->tool = xstrdup(src->tool);
+	dst->type = xstrdup(src->type);
+	dst->charset = xstrdup(src->charset);
+	dst->connection_addr = xstrdup(src->connection_addr);
+	dst->multicast = src->multicast;
+	dst->control_url = xstrdup(src->control_url);
+	dst->start_mode = src->start_mode;
+	dst->range = src->range;
+	dst->rtcp_xr = src->rtcp_xr;
 
-	return attr;
-}
-
-
-int sdp_session_attr_remove(
-	struct sdp_session *session,
-	struct sdp_attr *attr)
-{
-	SDP_RETURN_ERR_IF_FAILED(session != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(attr != NULL, -EINVAL);
-
-	int found = 0;
-	struct sdp_attr *_attr = NULL;
-	list_walk_entry_forward(&session->attrs, _attr, node) {
-		if (_attr == attr) {
-			found = 1;
-			break;
-		}
+	list_walk_entry_forward(&src->attrs, _attr, node)
+	{
+		err = sdp_session_attr_add(dst, &attr);
+		if (err < 0)
+			return err;
+		err = sdp_attr_copy(_attr, attr);
+		if (err < 0)
+			return err;
 	}
+	dst->attr_count = src->attr_count;
 
-	if (!found) {
-		SDP_LOGE("failed to find the attribute in the list");
-		return -EINVAL;
+	list_walk_entry_forward(&src->medias, _media, node)
+	{
+		err = sdp_session_media_add(dst, &media);
+		if (err < 0)
+			return err;
+		err = sdp_media_copy(_media, media);
+		if (err < 0)
+			return err;
 	}
-
-	/* remove from the list */
-	list_del(&attr->node);
-	session->attr_count--;
-
-	free(attr->key);
-	free(attr->value);
-	free(attr);
+	dst->media_count = src->media_count;
 
 	return 0;
 }
 
 
-struct sdp_media *sdp_session_media_add(
-	struct sdp_session *session)
+int sdp_session_compare(const struct sdp_session *a,
+			const struct sdp_session *b)
 {
-	SDP_RETURN_VAL_IF_FAILED(session != NULL, -EINVAL, NULL);
+	int url_match = 0;
+	struct sdp_media *a_media = NULL;
+	struct sdp_media *b_media = NULL;
 
+	if (a == NULL && b == NULL) {
+		/* 2 NULL input SDP are considered identical */
+		return 0;
+	} else if (a == NULL || b == NULL) {
+		/* If one of the input sdp is NULL, they differ */
+		return 1;
+	}
+
+	if (a->media_count != b->media_count) {
+		/* Different media nb makes sdp different */
+		return 1;
+	}
+
+	/* Compare the session name */
+	if (a->session_name && b->session_name) {
+		if (strcmp(a->session_name, b->session_name)) {
+			/* Different session name makes sdp different */
+			return 1;
+		}
+	} else if ((a->session_name != NULL) != (b->session_name != NULL)) {
+		/* Only one of the session name is NULL */
+		return 1;
+	}
+
+	/* Compare each media url */
+	list_walk_entry_forward(&a->medias, a_media, node)
+	{
+		url_match = 0;
+		b_media = NULL;
+		list_walk_entry_forward(&b->medias, b_media, node)
+		{
+			if (a_media->control_url == NULL &&
+			    b_media->control_url == NULL) {
+				url_match = 1;
+				break;
+			} else if (a_media->control_url == NULL ||
+				   b_media->control_url == NULL) {
+				/* Control url differs since one of them is
+				 * NULL */
+				continue;
+			}
+			if (!strcmp(a_media->control_url,
+				    b_media->control_url)) {
+				/* Control url are identical */
+				url_match = 1;
+				break;
+			}
+		}
+		if (!url_match) {
+			/* Media control url differs */
+			return 1;
+		} else if (a_media->type != b_media->type) {
+			/* Media type differs */
+			return 1;
+		}
+	}
+	/* Every parameter we checked were equal, so are the SDPs */
+	return 0;
+}
+
+
+struct sdp_media *sdp_media_new(void)
+{
 	struct sdp_media *media = calloc(1, sizeof(*media));
-	SDP_RETURN_VAL_IF_FAILED(media != NULL, -ENOMEM, NULL);
+	ULOG_ERRNO_RETURN_VAL_IF(media == NULL, ENOMEM, NULL);
 	list_node_unref(&media->node);
 	list_init(&media->attrs);
-
-	/* add to the list */
-	list_add_after(list_last(&session->medias), &media->node);
-	session->media_count++;
 
 	return media;
 }
 
 
-int sdp_session_media_remove(
-	struct sdp_session *session,
-	struct sdp_media *media)
+int sdp_media_destroy(struct sdp_media *media)
 {
-	SDP_RETURN_ERR_IF_FAILED(session != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(media != NULL, -EINVAL);
-
-	int found = 0;
-	struct sdp_media *_media = NULL;
-	list_walk_entry_forward(&session->medias, _media, node) {
-		if (_media == media) {
-			found = 1;
-			break;
-		}
-	}
-
-	if (!found) {
-		SDP_LOGE("failed to find the media in the list");
-		return -EINVAL;
-	}
-
-	/* remove all attibutes */
 	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
-	list_walk_entry_forward_safe(&media->attrs, attr, tmp_attr, node) {
-		int ret = sdp_media_attr_remove(media, attr);
-		if (ret != 0)
-			SDP_LOGE("sdp_media_attr_remove() failed: %d(%s)",
-				ret, strerror(-ret));
-	}
 
-	/* remove from the list */
-	list_del(&media->node);
-	session->media_count--;
+	if (media == NULL)
+		return 0;
+
+	ULOG_ERRNO_RETURN_ERR_IF(list_node_is_ref(&media->node), EBUSY);
+
+	/* Remove all attributes */
+	list_walk_entry_forward_safe(&media->attrs, attr, tmp_attr, node)
+	{
+		sdp_media_attr_remove(media, attr);
+	}
 
 	free(media->media_title);
 	free(media->connection_addr);
@@ -221,32 +330,147 @@ int sdp_session_media_remove(
 }
 
 
-struct sdp_attr *sdp_media_attr_add(
-	struct sdp_media *media)
+int sdp_media_copy(const struct sdp_media *src, struct sdp_media *dst)
 {
-	SDP_RETURN_VAL_IF_FAILED(media != NULL, -EINVAL, NULL);
+	struct sdp_attr *attr, *_attr = NULL;
+	int err;
 
+	ULOG_ERRNO_RETURN_ERR_IF(src == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(dst == NULL, EINVAL);
+
+	dst->type = src->type;
+	dst->media_title = xstrdup(src->media_title);
+	dst->connection_addr = xstrdup(src->connection_addr);
+	dst->multicast = src->multicast;
+	dst->dst_stream_port = src->dst_stream_port;
+	dst->dst_control_port = src->dst_control_port;
+	dst->payload_type = src->payload_type;
+	dst->control_url = xstrdup(src->control_url);
+	dst->start_mode = src->start_mode;
+	dst->range = src->range;
+	dst->encoding_name = xstrdup(src->encoding_name);
+	dst->encoding_params = xstrdup(src->encoding_params);
+	dst->clock_rate = src->clock_rate;
+	dst->h264_fmtp = src->h264_fmtp;
+	dst->h264_fmtp.sps = NULL;
+	dst->h264_fmtp.sps_size = 0;
+	if (src->h264_fmtp.sps_size > 0) {
+		dst->h264_fmtp.sps = calloc(1, src->h264_fmtp.sps_size);
+		ULOG_ERRNO_RETURN_ERR_IF(dst->h264_fmtp.sps == NULL, ENOMEM);
+		memcpy(dst->h264_fmtp.sps,
+		       src->h264_fmtp.sps,
+		       src->h264_fmtp.sps_size);
+		dst->h264_fmtp.sps_size = src->h264_fmtp.sps_size;
+	}
+	dst->h264_fmtp.pps = NULL;
+	dst->h264_fmtp.pps_size = 0;
+	if (src->h264_fmtp.pps_size > 0) {
+		dst->h264_fmtp.pps = calloc(1, src->h264_fmtp.pps_size);
+		ULOG_ERRNO_RETURN_ERR_IF(dst->h264_fmtp.pps == NULL, ENOMEM);
+		memcpy(dst->h264_fmtp.pps,
+		       src->h264_fmtp.pps,
+		       src->h264_fmtp.pps_size);
+		dst->h264_fmtp.pps_size = src->h264_fmtp.pps_size;
+	}
+	dst->rtcp_xr = src->rtcp_xr;
+
+
+	list_walk_entry_forward(&src->attrs, _attr, node)
+	{
+		err = sdp_media_attr_add(dst, &attr);
+		if (err < 0)
+			return err;
+		err = sdp_attr_copy(_attr, attr);
+		if (err < 0)
+			return err;
+	}
+	dst->attr_count = src->attr_count;
+
+	return 0;
+}
+
+
+struct sdp_attr *sdp_attr_new(void)
+{
 	struct sdp_attr *attr = calloc(1, sizeof(*attr));
-	SDP_RETURN_VAL_IF_FAILED(attr != NULL, -ENOMEM, NULL);
-
-	/* add to the list */
-	list_add_after(list_last(&media->attrs), &attr->node);
-	media->attr_count++;
+	ULOG_ERRNO_RETURN_VAL_IF(attr == NULL, ENOMEM, NULL);
+	list_node_unref(&attr->node);
 
 	return attr;
 }
 
 
-int sdp_media_attr_remove(
-	struct sdp_media *media,
-	struct sdp_attr *attr)
+int sdp_attr_destroy(struct sdp_attr *attr)
 {
-	SDP_RETURN_ERR_IF_FAILED(media != NULL, -EINVAL);
-	SDP_RETURN_ERR_IF_FAILED(attr != NULL, -EINVAL);
+	if (attr == NULL)
+		return 0;
 
-	int found = 0;
+	ULOG_ERRNO_RETURN_ERR_IF(list_node_is_ref(&attr->node), EBUSY);
+
+	free(attr->key);
+	free(attr->value);
+	free(attr);
+
+	return 0;
+}
+
+
+int sdp_attr_copy(const struct sdp_attr *src, struct sdp_attr *dst)
+{
+	ULOG_ERRNO_RETURN_ERR_IF(src == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(dst == NULL, EINVAL);
+
+	dst->key = xstrdup(src->key);
+	dst->value = xstrdup(src->value);
+
+	return 0;
+}
+
+
+int sdp_session_attr_add(struct sdp_session *session, struct sdp_attr **ret_obj)
+{
+	struct sdp_attr *attr = NULL;
+
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(ret_obj == NULL, EINVAL);
+
+	attr = sdp_attr_new();
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, ENOMEM);
+
+	/* Add to the list */
+	list_add_after(list_last(&session->attrs), &attr->node);
+	session->attr_count++;
+
+	*ret_obj = attr;
+	return 0;
+}
+
+
+int sdp_session_attr_add_existing(struct sdp_session *session,
+				  struct sdp_attr *attr)
+{
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(list_node_is_ref(&attr->node), EBUSY);
+
+	/* Add to the list */
+	list_add_after(list_last(&session->attrs), &attr->node);
+	session->attr_count++;
+
+	return 0;
+}
+
+
+int sdp_session_attr_remove(struct sdp_session *session, struct sdp_attr *attr)
+{
+	int err, found = 0;
 	struct sdp_attr *_attr = NULL;
-	list_walk_entry_forward(&media->attrs, _attr, node) {
+
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
+
+	list_walk_entry_forward(&session->attrs, _attr, node)
+	{
 		if (_attr == attr) {
 			found = 1;
 			break;
@@ -254,132 +478,519 @@ int sdp_media_attr_remove(
 	}
 
 	if (!found) {
-		SDP_LOGE("failed to find the attribute in the list");
-		return -EINVAL;
+		ULOGE("%s: failed to find the attribute in the list", __func__);
+		return -ENOENT;
 	}
 
-	/* remove from the list */
+	/* Remove from the list */
 	list_del(&attr->node);
-	media->attr_count--;
+	session->attr_count--;
 
-	free(attr);
+	err = sdp_attr_destroy(attr);
+	if (err < 0)
+		return err;
 
 	return 0;
 }
 
 
-static int sdp_h264_fmtp_write(
-	const struct sdp_h264_fmtp *fmtp,
-	unsigned int payload_type,
-	struct sdp_string *sdp)
+int sdp_session_media_add(struct sdp_session *session,
+			  struct sdp_media **ret_obj)
 {
-	int ret = 0;
+	struct sdp_media *media = NULL;
 
-	sdp_sprintf(sdp, "%c=%s:%d ",
-		SDP_TYPE_ATTRIBUTE,
-		SDP_ATTR_FMTP,
-		payload_type);
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(ret_obj == NULL, EINVAL);
 
-	/* packetization-mode */
-	sdp_sprintf(sdp, "%s=%d;",
-		SDP_FMTP_H264_PACKETIZATION,
-		fmtp->packetization_mode);
+	media = sdp_media_new();
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, ENOMEM);
 
-	/* profile-level-id */
-	sdp_sprintf(sdp, "%s=%02X%02X%02X;",
-		SDP_FMTP_H264_PROFILE_LEVEL,
-		fmtp->profile_idc,
-		fmtp->profile_iop,
-		fmtp->level_idc);
+	/* Add to the list */
+	list_add_after(list_last(&session->medias), &media->node);
+	session->media_count++;
 
-	/* sprop-parameter-sets */
-	if ((fmtp->sps) && (fmtp->sps_size) &&
-		(fmtp->pps) && (fmtp->pps_size)) {
-		int ret = 0, err;
-		char *sps_b64 = NULL;
-		char *pps_b64 = NULL;
-		err = sdp_base64_encode((void *)fmtp->sps,
-			(size_t)fmtp->sps_size, &sps_b64);
-		if (err != 0)
-			ret = err;
-		err = sdp_base64_encode((void *)fmtp->pps,
-			(size_t)fmtp->pps_size, &pps_b64);
-		if (err != 0)
-			ret = err;
-		if (ret == 0) {
-			sdp_sprintf(sdp, "%s=%s,%s;",
-				SDP_FMTP_H264_PARAM_SETS,
-				sps_b64, pps_b64);
+	*ret_obj = media;
+	return 0;
+}
+
+
+int sdp_session_media_add_existing(struct sdp_session *session,
+				   struct sdp_media *media)
+{
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(list_node_is_ref(&media->node), EBUSY);
+
+	/* Add to the list */
+	list_add_after(list_last(&session->medias), &media->node);
+	session->media_count++;
+
+	return 0;
+}
+
+
+int sdp_session_media_remove(struct sdp_session *session,
+			     struct sdp_media *media)
+{
+	int err, found = 0;
+	struct sdp_media *_media = NULL;
+
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
+
+	list_walk_entry_forward(&session->medias, _media, node)
+	{
+		if (_media == media) {
+			found = 1;
+			break;
 		}
-		free(sps_b64);
-		free(pps_b64);
 	}
 
-	sdp_sprintf(sdp, "\r\n");
+	if (!found) {
+		ULOGE("%s: failed to find the media in the list", __func__);
+		return -ENOENT;
+	}
 
+	/* Remove from the list */
+	list_del(&media->node);
+	session->media_count--;
+
+	err = sdp_media_destroy(media);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+
+int sdp_media_attr_add(struct sdp_media *media, struct sdp_attr **ret_obj)
+{
+	struct sdp_attr *attr = NULL;
+
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(ret_obj == NULL, EINVAL);
+
+	attr = sdp_attr_new();
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, ENOMEM);
+
+	/* Add to the list */
+	list_add_after(list_last(&media->attrs), &attr->node);
+	media->attr_count++;
+
+	*ret_obj = attr;
+	return 0;
+}
+
+
+int sdp_media_attr_add_existing(struct sdp_media *media, struct sdp_attr *attr)
+{
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(list_node_is_ref(&attr->node), EBUSY);
+
+	/* Add to the list */
+	list_add_after(list_last(&media->attrs), &attr->node);
+	media->attr_count++;
+
+	return 0;
+}
+
+
+int sdp_media_attr_remove(struct sdp_media *media, struct sdp_attr *attr)
+{
+	int err, found = 0;
+	struct sdp_attr *_attr = NULL;
+
+	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
+
+	list_walk_entry_forward(&media->attrs, _attr, node)
+	{
+		if (_attr == attr) {
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found) {
+		ULOGE("%s: failed to find the attribute in the list", __func__);
+		return -ENOENT;
+	}
+
+	/* Remove from the list */
+	list_del(&attr->node);
+	media->attr_count--;
+
+	err = sdp_attr_destroy(attr);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+
+static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
+{
+	int ret;
+
+	switch (time->format) {
+	case SDP_TIME_FORMAT_NPT:
+		if (time->npt.now) {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   SDP_TIME_NPT_NOW);
+		} else {
+			ULOG_ERRNO_RETURN_ERR_IF(time->npt.infinity, EINVAL);
+			unsigned int hrs, min;
+			unsigned int sec =
+				time->npt.sec + time->npt.usec / 1000000;
+			hrs = sec / (60 * 60);
+			min = sec / 60 - hrs * 60;
+			sec = sec - min * 60 - hrs * 60 * 60;
+			float usec = (float)time->npt.usec / 1000000. -
+				     (time->npt.usec / 1000000);
+			char fraction[6];
+			snprintf(fraction, sizeof(fraction), "%.3f", usec);
+			if ((min > 0) || (hrs > 0)) {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   return ret,
+					   sdp,
+					   "%u:%02u:%02u%s",
+					   hrs,
+					   min,
+					   sec,
+					   (usec != 0.) ? fraction + 1 : "");
+			} else {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   return ret,
+					   sdp,
+					   "%u%s",
+					   sec,
+					   (usec != 0.) ? fraction + 1 : "");
+			}
+		}
+		break;
+	case SDP_TIME_FORMAT_SMPTE:
+	case SDP_TIME_FORMAT_ABSOLUTE:
+		/* TODO */
+		ULOGE("unsupported time format: %d", time->format);
+		return -ENOSYS;
+	default:
+		ULOGE("unknown time format: %d", time->format);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
+static int sdp_time_read(struct sdp_time *time, char *value)
+{
+	char *s;
+
+	switch (time->format) {
+	case SDP_TIME_FORMAT_NPT:
+		s = strchr(value, ':');
+		if (s != NULL) {
+			/* Hours, minutes, seconds */
+			char *hrs_str = value;
+			*s = '\0';
+			char *min_str = s + 1;
+			s = strchr(min_str, ':');
+			ULOG_ERRNO_RETURN_ERR_IF(s == NULL, EINVAL);
+			*s = '\0';
+			char *sec_str = s + 1;
+			unsigned int hrs = atoi(hrs_str);
+			unsigned int min = atoi(min_str);
+			float sec_f = atof(sec_str);
+			time->npt.sec = (time_t)sec_f;
+			time->npt.sec += min * 60 + hrs * 60 * 60;
+			time->npt.usec = (uint32_t)(
+				(sec_f - (float)((unsigned int)sec_f)) *
+				1000000);
+		} else {
+			if (strcmp(value, SDP_TIME_NPT_NOW) == 0) {
+				/* now */
+				time->npt.now = 1;
+			} else {
+				/* seconds only */
+				float sec = atof(value);
+				time->npt.sec = (time_t)sec;
+				time->npt.usec = (uint32_t)(
+					(sec - (float)time->npt.sec) * 1000000);
+			}
+		}
+		break;
+	case SDP_TIME_FORMAT_SMPTE:
+	case SDP_TIME_FORMAT_ABSOLUTE:
+		/* TODO */
+		ULOGE("unsupported time format: %d", time->format);
+		return -ENOSYS;
+	default:
+		ULOGE("unknown time format: %d", time->format);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
+static int sdp_range_attr_write(const struct sdp_range *range,
+				struct sdp_string *sdp)
+{
+	int ret;
+
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%c=%s:",
+		   SDP_TYPE_ATTRIBUTE,
+		   SDP_ATTR_RANGE);
+
+	switch (range->start.format) {
+	case SDP_TIME_FORMAT_NPT:
+		/* Start and stop cannot be both infinity */
+		ULOG_ERRNO_RETURN_ERR_IF(range->start.npt.infinity &&
+						 range->stop.npt.infinity,
+					 EINVAL);
+		/* 'now' makes no sense in SDP */
+		ULOG_ERRNO_RETURN_ERR_IF(range->start.npt.now, EINVAL);
+		ULOG_ERRNO_RETURN_ERR_IF(range->stop.npt.now, EINVAL);
+		CHECK_FUNC(sdp_sprintf, ret, return ret, sdp, SDP_TIME_NPT "=");
+		if (!range->start.npt.infinity) {
+			ret = sdp_time_write(&range->start, sdp);
+			if (ret < 0)
+				return ret;
+		}
+		CHECK_FUNC(sdp_sprintf, ret, return ret, sdp, "-");
+		if (!range->stop.npt.infinity) {
+			ret = sdp_time_write(&range->stop, sdp);
+			if (ret < 0)
+				return ret;
+		}
+		break;
+	case SDP_TIME_FORMAT_SMPTE:
+	case SDP_TIME_FORMAT_ABSOLUTE:
+		/* TODO */
+		ULOGE("unsupported time format: %d", range->start.format);
+		return -ENOSYS;
+	default:
+		ULOGE("unknown time format: %d", range->start.format);
+		return -EINVAL;
+	}
+
+	CHECK_FUNC(sdp_sprintf, ret, return ret, sdp, SDP_CRLF);
+
+	return 0;
+}
+
+
+static int sdp_range_attr_read(struct sdp_range *range, char *value)
+{
+	int err;
+	char *s;
+	char *start_str = NULL, *stop_str = NULL;
+
+	memset(range, 0, sizeof(*range));
+
+	s = strchr(value, '=');
+	ULOG_ERRNO_RETURN_ERR_IF(s == NULL, EINVAL);
+
+	*s = '\0';
+	start_str = s + 1;
+
+	s = strchr(start_str, '-');
+	ULOG_ERRNO_RETURN_ERR_IF(s == NULL, EINVAL);
+
+	*s = '\0';
+	stop_str = s + 1;
+
+	if (strcmp(value, SDP_TIME_NPT) == 0) {
+		/* Normal Play Time (NPT) */
+		range->start.format = SDP_TIME_FORMAT_NPT;
+		range->stop.format = SDP_TIME_FORMAT_NPT;
+		if (strlen(start_str)) {
+			err = sdp_time_read(&range->start, start_str);
+			if (err < 0)
+				return -err;
+		} else {
+			range->start.npt.infinity = 1;
+		}
+		if (strlen(stop_str)) {
+			err = sdp_time_read(&range->stop, stop_str);
+			if (err < 0)
+				return -err;
+		} else {
+			range->stop.npt.infinity = 1;
+		}
+
+	} else if (strcmp(value, SDP_TIME_SMPTE) == 0) {
+		/* SMPTE Relative Timestamps */
+		range->start.format = SDP_TIME_FORMAT_SMPTE;
+		range->stop.format = SDP_TIME_FORMAT_SMPTE;
+		/* TODO*/
+		ULOGE("unsupported time format: %s", value);
+		return -ENOSYS;
+
+	} else if (strcmp(value, SDP_TIME_ABSOLUTE) == 0) {
+		/* Absolute Time (UTC, ISO 8601) */
+		range->start.format = SDP_TIME_FORMAT_ABSOLUTE;
+		range->stop.format = SDP_TIME_FORMAT_ABSOLUTE;
+		/* TODO*/
+		ULOGE("unsupported time format: %s", value);
+		return -ENOSYS;
+
+	} else {
+		ULOGE("unknown time format: %s", value);
+		return -EINVAL;
+	}
+
+	ULOG_ERRNO_RETURN_ERR_IF(range->start.format != range->stop.format,
+				 EINVAL);
+	/* Start and stop cannot be both infinity */
+	ULOG_ERRNO_RETURN_ERR_IF(
+		range->start.npt.infinity && range->stop.npt.infinity, EINVAL);
+	/* 'now' makes no sense in SDP */
+	ULOG_ERRNO_RETURN_ERR_IF(range->start.npt.now, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(range->stop.npt.now, EINVAL);
+
+	return 0;
+}
+
+
+static int sdp_h264_fmtp_write(const struct sdp_h264_fmtp *fmtp,
+			       unsigned int payload_type,
+			       struct sdp_string *sdp)
+{
+	int ret = 0;
+	char *sps_b64 = NULL;
+	char *pps_b64 = NULL;
+
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%c=%s:%d ",
+		   SDP_TYPE_ATTRIBUTE,
+		   SDP_ATTR_FMTP,
+		   payload_type);
+
+	/* packetization-mode */
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%s=%d;",
+		   SDP_FMTP_H264_PACKETIZATION,
+		   fmtp->packetization_mode);
+
+	/* profile-level-id */
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%s=%02X%02X%02X;",
+		   SDP_FMTP_H264_PROFILE_LEVEL,
+		   fmtp->profile_idc,
+		   fmtp->profile_iop,
+		   fmtp->level_idc);
+
+	/* sprop-parameter-sets */
+	if ((fmtp->sps) && (fmtp->sps_size) && (fmtp->pps) &&
+	    (fmtp->pps_size)) {
+		ret = sdp_base64_encode(
+			(void *)fmtp->sps, (size_t)fmtp->sps_size, &sps_b64);
+		if (ret < 0)
+			goto out;
+		ret = sdp_base64_encode(
+			(void *)fmtp->pps, (size_t)fmtp->pps_size, &pps_b64);
+		if (ret < 0)
+			goto out;
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto out,
+			   sdp,
+			   "%s=%s,%s;",
+			   SDP_FMTP_H264_PARAM_SETS,
+			   sps_b64,
+			   pps_b64);
+	}
+
+	CHECK_FUNC(sdp_sprintf, ret, goto out, sdp, SDP_CRLF);
+
+out:
+	free(sps_b64);
+	free(pps_b64);
 	return ret;
 }
 
 
 /* NB: the data pointed by 'value' will be modified */
-static int sdp_h264_fmtp_read(
-	struct sdp_h264_fmtp *fmtp,
-	char *value)
+static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 {
-	int ret = 0;
+	int ret;
 	char *temp1 = NULL;
 	char *param = NULL;
+	char *val = NULL;
 
 	fmtp->valid = 0;
 	param = strtok_r(value, ";", &temp1);
 	while (param) {
-		if (!strcmp(param, SDP_FMTP_H264_PROFILE_LEVEL)) {
+		val = strchr(param, '=');
+		if (val != NULL) {
+			*val = '\0';
+			val++;
+		}
+		if ((strcmp(param, SDP_FMTP_H264_PROFILE_LEVEL) == 0) &&
+		    (val)) {
 			/* profile-level-id */
-			char *p2 = strchr(param, '=');
 			uint32_t profile_level_id = 0;
-			if (p2 != NULL)
-				sscanf(p2 + 1, "%6X", &profile_level_id);
+			sscanf(val, "%6X", &profile_level_id);
 			fmtp->profile_idc = (profile_level_id >> 16) & 0xFF;
 			fmtp->profile_iop = (profile_level_id >> 8) & 0xFF;
 			fmtp->level_idc = profile_level_id & 0xFF;
 
-		} else if (!strcmp(param, SDP_FMTP_H264_PACKETIZATION)) {
+		} else if ((strcmp(param, SDP_FMTP_H264_PACKETIZATION) == 0) &&
+			   (val)) {
 			/* packetization-mode */
-			char *p2 = strchr(param, '=');
-			if (p2 != NULL)
-				fmtp->packetization_mode = atoi(p2 + 1);
+			fmtp->packetization_mode = atoi(val);
 
-		} else if (!strcmp(param, SDP_FMTP_H264_PARAM_SETS)) {
+		} else if ((strcmp(param, SDP_FMTP_H264_PARAM_SETS) == 0) &&
+			   (val)) {
 			/* sprop-parameter-sets */
-			char *p2 = strchr(param, '=');
 			char *p3 = NULL;
-			if (p2 != NULL)
-				p3 = strchr(p2 + 1, ',');
-			if ((p2 != NULL) && (p3 != NULL)) {
+			p3 = strchr(val, ',');
+			if (p3 != NULL) {
 				*p3 = '\0';
-				char *sps_b64 = p2 + 1;
+				char *sps_b64 = val;
 				char *pps_b64 = p3 + 1;
 				void *sps = NULL;
 				size_t sps_size = 0;
 				void *pps = NULL;
 				size_t pps_size = 0;
-				int err = sdp_base64_decode(sps_b64,
-					&sps, &sps_size);
-				if (err != 0)
-					ret = err;
-				err = sdp_base64_decode(pps_b64,
-					&pps, &pps_size);
-				if (err != 0)
-					ret = err;
-				if (ret != 0) {
+				ret = sdp_base64_decode(
+					sps_b64, &sps, &sps_size);
+				if (ret < 0) {
 					free(sps);
 					free(pps);
-				} else {
-					fmtp->sps = (uint8_t *)sps;
-					fmtp->sps_size = (unsigned int)sps_size;
-					fmtp->pps = (uint8_t *)pps;
-					fmtp->pps_size = (unsigned int)pps_size;
+					return ret;
 				}
+				ret = sdp_base64_decode(
+					pps_b64, &pps, &pps_size);
+				if (ret < 0) {
+					free(sps);
+					free(pps);
+					return ret;
+				}
+				fmtp->sps = (uint8_t *)sps;
+				fmtp->sps_size = (unsigned int)sps_size;
+				fmtp->pps = (uint8_t *)pps;
+				fmtp->pps_size = (unsigned int)pps_size;
 			}
 		}
 
@@ -387,243 +998,317 @@ static int sdp_h264_fmtp_read(
 	};
 
 	fmtp->valid = 1;
-	return ret;
+	return 0;
 }
 
 
-static int sdp_rtcp_xr_attr_write(
-	const struct sdp_rtcp_xr *xr,
-	struct sdp_string *sdp)
+static int sdp_rtcp_xr_attr_write(const struct sdp_rtcp_xr *xr,
+				  struct sdp_string *sdp)
 {
-	int ret = 0, is_first = 1;
+	int ret, is_first = 1;
 
-	if ((!xr->loss_rle_report) &&
-		(!xr->dup_rle_report) &&
-		(!xr->pkt_receipt_times_report) &&
-		((xr->rtt_report <= SDP_RTCP_XR_RTT_REPORT_NONE) ||
-			(xr->rtt_report >= SDP_RTCP_XR_RTT_REPORT_MAX)) &&
-		(!xr->stats_summary_report_loss) &&
-		(!xr->stats_summary_report_dup) &&
-		(!xr->stats_summary_report_jitter) &&
-		(!xr->stats_summary_report_ttl) &&
-		(!xr->stats_summary_report_hl) &&
-		(!xr->voip_metrics_report) &&
-		(!xr->djb_metrics_report)) {
+	if ((!xr->loss_rle_report) && (!xr->dup_rle_report) &&
+	    (!xr->pkt_receipt_times_report) &&
+	    ((xr->rtt_report <= SDP_RTCP_XR_RTT_REPORT_NONE) ||
+	     (xr->rtt_report >= SDP_RTCP_XR_RTT_REPORT_MAX)) &&
+	    (!xr->stats_summary_report_loss) &&
+	    (!xr->stats_summary_report_dup) &&
+	    (!xr->stats_summary_report_jitter) &&
+	    (!xr->stats_summary_report_ttl) && (!xr->stats_summary_report_hl) &&
+	    (!xr->voip_metrics_report) && (!xr->djb_metrics_report)) {
 		return 0;
 	}
 
-	sdp_sprintf(sdp, "%c=%s:",
-		SDP_TYPE_ATTRIBUTE,
-		SDP_ATTR_RTCP_XR);
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%c=%s:",
+		   SDP_TYPE_ATTRIBUTE,
+		   SDP_ATTR_RTCP_XR);
 
 	/* pkt-loss-rle */
 	if (xr->loss_rle_report) {
-		if (xr->loss_rle_report_max_size > 0)
-			sdp_sprintf(sdp, "%s%s=%d",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_LOSS_RLE,
-				xr->loss_rle_report_max_size);
-		else
-			sdp_sprintf(sdp, "%s%s",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_LOSS_RLE);
+		/* No need to test is_first here since it has its init value */
+		if (xr->loss_rle_report_max_size > 0) {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s=%d",
+				   SDP_ATTR_RTCP_XR_LOSS_RLE,
+				   xr->loss_rle_report_max_size);
+		} else {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s",
+				   SDP_ATTR_RTCP_XR_LOSS_RLE);
+		}
 		is_first = 0;
 	}
 
 	/* pkt-dup-rle */
 	if (xr->dup_rle_report) {
-		if (xr->dup_rle_report_max_size > 0)
-			sdp_sprintf(sdp, "%s%s=%d",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_DUP_RLE,
-				xr->dup_rle_report_max_size);
-		else
-			sdp_sprintf(sdp, "%s%s",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_DUP_RLE);
+		if (xr->dup_rle_report_max_size > 0) {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s=%d",
+				   (is_first) ? "" : " ",
+				   SDP_ATTR_RTCP_XR_DUP_RLE,
+				   xr->dup_rle_report_max_size);
+		} else {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first) ? "" : " ",
+				   SDP_ATTR_RTCP_XR_DUP_RLE);
+		}
 		is_first = 0;
 	}
 
 	/* pkt-rcpt-times */
 	if (xr->pkt_receipt_times_report) {
-		if (xr->pkt_receipt_times_report_max_size > 0)
-			sdp_sprintf(sdp, "%s%s=%d",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_RCPT_TIMES,
-				xr->pkt_receipt_times_report_max_size);
-		else
-			sdp_sprintf(sdp, "%s%s",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_RCPT_TIMES);
+		if (xr->pkt_receipt_times_report_max_size > 0) {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s=%d",
+				   (is_first) ? "" : " ",
+				   SDP_ATTR_RTCP_XR_RCPT_TIMES,
+				   xr->pkt_receipt_times_report_max_size);
+		} else {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first) ? "" : " ",
+				   SDP_ATTR_RTCP_XR_RCPT_TIMES);
+		}
 		is_first = 0;
 	}
 
 	/* rcvr-rtt */
 	if ((xr->rtt_report > SDP_RTCP_XR_RTT_REPORT_NONE) &&
-		(xr->rtt_report < SDP_RTCP_XR_RTT_REPORT_MAX)) {
-		if (xr->loss_rle_report_max_size > 0)
-			sdp_sprintf(sdp, "%s%s=%s:%d",
+	    (xr->rtt_report < SDP_RTCP_XR_RTT_REPORT_MAX)) {
+		if (xr->loss_rle_report_max_size > 0) {
+			CHECK_FUNC(
+				sdp_sprintf,
+				ret,
+				return ret,
+				sdp,
+				"%s%s=%s:%d",
 				(is_first) ? "" : " ",
 				SDP_ATTR_RTCP_XR_RCVR_RTT,
-				sdp_rtcp_xr_rtt_report_mode_str[
-					xr->rtt_report],
+				sdp_rtcp_xr_rtt_report_mode_str(xr->rtt_report),
 				xr->loss_rle_report_max_size);
-		else
-			sdp_sprintf(sdp, "%s%s=%s",
-				(is_first) ? "" : " ",
-				SDP_ATTR_RTCP_XR_RCVR_RTT,
-				sdp_rtcp_xr_rtt_report_mode_str[
-					xr->rtt_report]);
+		} else {
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s=%s",
+				   (is_first) ? "" : " ",
+				   SDP_ATTR_RTCP_XR_RCVR_RTT,
+				   sdp_rtcp_xr_rtt_report_mode_str(
+					   xr->rtt_report));
+		}
 		is_first = 0;
 	}
 
 	/* stat-summary */
-	if ((xr->stats_summary_report_loss) ||
-		(xr->stats_summary_report_dup) ||
-		(xr->stats_summary_report_jitter) ||
-		(xr->stats_summary_report_ttl) ||
-		(xr->stats_summary_report_hl)) {
+	if ((xr->stats_summary_report_loss) || (xr->stats_summary_report_dup) ||
+	    (xr->stats_summary_report_jitter) ||
+	    (xr->stats_summary_report_ttl) || (xr->stats_summary_report_hl)) {
 		int is_first2 = 1;
-		sdp_sprintf(sdp, "%s%s=",
-			(is_first) ? "" : " ",
-			SDP_ATTR_RTCP_XR_STAT_SUMMARY);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%s%s=",
+			   (is_first) ? "" : " ",
+			   SDP_ATTR_RTCP_XR_STAT_SUMMARY);
 		is_first = 0;
 		if (xr->stats_summary_report_loss) {
-			sdp_sprintf(sdp, "%s%s",
-				(is_first2) ? "" : ",",
-				SDP_ATTR_RTCP_XR_STAT_LOSS);
+			/* No need to test is_first2 here since it has its init
+			 * value */
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s",
+				   SDP_ATTR_RTCP_XR_STAT_LOSS);
 			is_first2 = 0;
 		}
 		if (xr->stats_summary_report_dup) {
-			sdp_sprintf(sdp, "%s%s",
-				(is_first2) ? "" : ",",
-				SDP_ATTR_RTCP_XR_STAT_DUP);
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first2) ? "" : ",",
+				   SDP_ATTR_RTCP_XR_STAT_DUP);
 			is_first2 = 0;
 		}
 		if (xr->stats_summary_report_jitter) {
-			sdp_sprintf(sdp, "%s%s",
-				(is_first2) ? "" : ",",
-				SDP_ATTR_RTCP_XR_STAT_JITT);
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first2) ? "" : ",",
+				   SDP_ATTR_RTCP_XR_STAT_JITT);
 			is_first2 = 0;
 		}
 		if (xr->stats_summary_report_ttl) {
-			sdp_sprintf(sdp, "%s%s",
-				(is_first2) ? "" : ",",
-				SDP_ATTR_RTCP_XR_STAT_TTL);
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first2) ? "" : ",",
+				   SDP_ATTR_RTCP_XR_STAT_TTL);
 			is_first2 = 0;
 		}
 		if (xr->stats_summary_report_hl) {
-			sdp_sprintf(sdp, "%s%s",
-				(is_first2) ? "" : ",",
-				SDP_ATTR_RTCP_XR_STAT_HL);
+			CHECK_FUNC(sdp_sprintf,
+				   ret,
+				   return ret,
+				   sdp,
+				   "%s%s",
+				   (is_first2) ? "" : ",",
+				   SDP_ATTR_RTCP_XR_STAT_HL);
 			is_first2 = 0;
 		}
 	}
 
 	/* voip-metrics */
 	if (xr->voip_metrics_report) {
-		sdp_sprintf(sdp, "%s%s",
-			(is_first) ? "" : " ",
-			SDP_ATTR_RTCP_XR_VOIP_METRICS);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%s%s",
+			   (is_first) ? "" : " ",
+			   SDP_ATTR_RTCP_XR_VOIP_METRICS);
 		is_first = 0;
 	}
 
 	/* de-jitter-buffer */
 	if (xr->djb_metrics_report) {
-		sdp_sprintf(sdp, "%s%s",
-			(is_first) ? "" : " ",
-			SDP_ATTR_RTCP_XR_DJB_METRICS);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%s%s",
+			   (is_first) ? "" : " ",
+			   SDP_ATTR_RTCP_XR_DJB_METRICS);
 		is_first = 0;
 	}
 
-	sdp_sprintf(sdp, "\r\n");
+	CHECK_FUNC(sdp_sprintf, ret, return ret, sdp, SDP_CRLF);
 
-	return ret;
+	return 0;
 }
 
 
 /* NB: the data pointed by 'value' will be modified */
-static int sdp_rtcp_xr_attr_read(
-	struct sdp_rtcp_xr *xr,
-	char *value)
+static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 {
-	int ret = 0;
 	char *temp1 = NULL;
 	char *xr_format = NULL;
+	char *val = NULL;
 
 	xr->valid = 0;
 	xr_format = strtok_r(value, " ", &temp1);
 	while (xr_format) {
-		if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_LOSS_RLE)) {
+		val = strchr(xr_format, '=');
+		if (val != NULL) {
+			*val = '\0';
+			val++;
+		}
+		if (strcmp(xr_format, SDP_ATTR_RTCP_XR_LOSS_RLE) == 0) {
 			/* pkt-loss-rle */
 			xr->loss_rle_report = 1;
-			char *p2 = strchr(xr_format, '=');
-			if (p2 != NULL)
-				xr->loss_rle_report_max_size = atoi(p2 + 1);
+			if (val != NULL)
+				xr->loss_rle_report_max_size = atoi(val);
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_DUP_RLE)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_DUP_RLE) == 0) {
 			/* pkt-dup-rle */
 			xr->dup_rle_report = 1;
-			char *p2 = strchr(xr_format, '=');
-			if (p2 != NULL)
-				xr->dup_rle_report_max_size = atoi(p2 + 1);
+			if (val != NULL)
+				xr->dup_rle_report_max_size = atoi(val);
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_RCPT_TIMES)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_RCPT_TIMES) ==
+			   0) {
 			/* pkt-rcpt-times */
 			xr->pkt_receipt_times_report = 1;
-			char *p2 = strchr(xr_format, '=');
-			if (p2 != NULL)
+			if (val != NULL)
 				xr->pkt_receipt_times_report_max_size =
-					atoi(p2 + 1);
+					atoi(val);
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_RCVR_RTT)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_RCVR_RTT) == 0) {
 			/* rcvr-rtt */
-			char *p2 = strchr(xr_format, '=');
-			if ((p2 != NULL) && (!strcmp(p2 + 1,
-				sdp_rtcp_xr_rtt_report_mode_str[1])))
+			char *sz =
+				(val != NULL) ? strchr(xr_format, ':') : NULL;
+			if (sz != NULL) {
+				*sz = '\0';
+				sz++;
+				xr->rtt_report_max_size = atoi(sz);
+			}
+			if ((val != NULL) &&
+			    (strcmp(val, SDP_RTCP_XR_RTT_REPORT_ALL_STR) == 0))
 				xr->rtt_report = SDP_RTCP_XR_RTT_REPORT_ALL;
-			else if ((p2 != NULL) && (!strcmp(p2 + 1,
-				sdp_rtcp_xr_rtt_report_mode_str[1])))
+			else if ((val != NULL) &&
+				 (strcmp(val,
+					 SDP_RTCP_XR_RTT_REPORT_SENDER_STR) ==
+				  0))
 				xr->rtt_report = SDP_RTCP_XR_RTT_REPORT_SENDER;
 			else
 				xr->rtt_report = SDP_RTCP_XR_RTT_REPORT_NONE;
-			p2 = strchr(xr_format, ':');
-			if (p2 != NULL)
-				xr->rtt_report_max_size = atoi(p2 + 1);
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_STAT_SUMMARY)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_STAT_SUMMARY) ==
+			   0) {
 			/* stat-summary */
-			char *p2 = strchr(xr_format, '=');
-			if (p2 == NULL)
+			if (val == NULL)
 				continue;
-			p2++;
 			char *temp2 = NULL;
 			char *stat_flag = NULL;
-			stat_flag = strtok_r(p2, ",", &temp2);
+			stat_flag = strtok_r(val, ",", &temp2);
 			while (stat_flag) {
-				if (!strcmp(stat_flag,
-					SDP_ATTR_RTCP_XR_STAT_LOSS))
+				if (strcmp(stat_flag,
+					   SDP_ATTR_RTCP_XR_STAT_LOSS) == 0)
 					xr->stats_summary_report_loss = 1;
-				else if (!strcmp(stat_flag,
-					SDP_ATTR_RTCP_XR_STAT_DUP))
+				else if (strcmp(stat_flag,
+						SDP_ATTR_RTCP_XR_STAT_DUP) == 0)
 					xr->stats_summary_report_dup = 1;
-				else if (!strcmp(stat_flag,
-					SDP_ATTR_RTCP_XR_STAT_JITT))
+				else if (strcmp(stat_flag,
+						SDP_ATTR_RTCP_XR_STAT_JITT) ==
+					 0)
 					xr->stats_summary_report_jitter = 1;
-				else if (!strcmp(stat_flag,
-					SDP_ATTR_RTCP_XR_STAT_TTL))
+				else if (strcmp(stat_flag,
+						SDP_ATTR_RTCP_XR_STAT_TTL) == 0)
 					xr->stats_summary_report_ttl = 1;
-				else if (!strcmp(stat_flag,
-					SDP_ATTR_RTCP_XR_STAT_HL))
+				else if (strcmp(stat_flag,
+						SDP_ATTR_RTCP_XR_STAT_HL) == 0)
 					xr->stats_summary_report_hl = 1;
 				stat_flag = strtok_r(NULL, ",", &temp2);
 			}
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_VOIP_METRICS)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_VOIP_METRICS) ==
+			   0) {
 			/* voip-metrics */
 			xr->voip_metrics_report = 1;
 
-		} else if (!strcmp(xr_format, SDP_ATTR_RTCP_XR_DJB_METRICS)) {
+		} else if (strcmp(xr_format, SDP_ATTR_RTCP_XR_DJB_METRICS) ==
+			   0) {
 			/* de-jitter-buffer */
 			xr->djb_metrics_report = 1;
 		}
@@ -632,29 +1317,34 @@ static int sdp_rtcp_xr_attr_read(
 	};
 
 	xr->valid = 1;
-	return ret;
+	return 0;
 }
 
 
 /* NB: the data pointed by 'value' will be modified */
-static int sdp_attr_read(
-	struct sdp_attr *attr,
-	struct sdp_session *session,
-	struct sdp_media *media,
-	char *value)
+static int sdp_attr_read(struct sdp_session *session,
+			 struct sdp_media *media,
+			 char *value,
+			 struct sdp_attr **out_attr)
 {
-	int ret = 0;
+	int err;
 	char *temp2 = NULL;
+	struct sdp_attr *attr;
 	char *attr_key = strtok_r(value, ":", &temp2);
-	char *attr_value = strtok_r(NULL, "\n", &temp2);
-	attr->key = strdup(attr_key);
-	if (attr_value)
-		attr->value = strdup(attr_value);
+	char *attr_value = strtok_r(NULL, "", &temp2);
+	*out_attr = NULL;
 
-	if ((!strcmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP)) && (attr_value)) {
+	if (attr_key == NULL) {
+		ULOGE("no attribute key");
+		return -EPROTO;
+	}
+
+	if ((strcmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP) == 0) && (attr_value)) {
 		/* a=rtpmap */
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(media != NULL, -1,
-			"attribute 'rtpmap' not on media level");
+		if (media == NULL) {
+			ULOGE("attribute 'rtpmap' not on media level");
+			return -EPROTO;
+		}
 		char *temp3 = NULL;
 		char *payload_type = NULL;
 		char *encoding_name = NULL;
@@ -665,667 +1355,809 @@ static int sdp_attr_read(
 			(payload_type) ? atoi(payload_type) : 0;
 		encoding_name = strtok_r(NULL, "/", &temp3);
 		clock_rate = strtok_r(NULL, "/", &temp3);
-		unsigned int i_clock_rate =
-			(clock_rate) ? atoi(clock_rate) : 0;
+		unsigned int i_clock_rate = (clock_rate) ? atoi(clock_rate) : 0;
 		encoding_params = strtok_r(NULL, "/", &temp3);
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(
-			payload_type_int == media->payload_type, -1,
-			"invalid payload type (%d vs. %d)",
-			payload_type_int, media->payload_type);
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(encoding_name != NULL, -1,
-			"invalid encoding name");
-		/* clock rate must be 90000 for H.264
+		if (payload_type_int != media->payload_type) {
+			ULOGE("invalid payload type (%d vs. %d)",
+			      payload_type_int,
+			      media->payload_type);
+			return -EPROTO;
+		}
+		if (encoding_name == NULL) {
+			ULOGE("encoding name is missing");
+			return -EPROTO;
+		}
+		/* Clock rate must be 90000 for H.264
 		 * (RFC6184 ch. 8.2.1) */
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(
-			((strcmp(encoding_name, SDP_ENCODING_H264)) ||
-			(i_clock_rate == SDP_H264_CLOCKRATE)), -1,
-			"unsupported clock rate %d", i_clock_rate);
+		if ((strcmp(encoding_name, SDP_ENCODING_H264) == 0) &&
+		    (i_clock_rate != SDP_H264_CLOCKRATE)) {
+			ULOGE("unsupported clock rate %d", i_clock_rate);
+			return -EPROTO;
+		}
 		media->encoding_name = strdup(encoding_name);
-		if (encoding_params)
-			media->encoding_params = strdup(encoding_params);
+		media->encoding_params = xstrdup(encoding_params);
 		media->clock_rate = i_clock_rate;
-		SDP_LOGD("SDP: payload_type=%d"
-			" encoding_name=%s clock_rate=%d"
-			" encoding_params=%s",
-			payload_type_int, encoding_name,
-			i_clock_rate, encoding_params);
+		ULOGD("SDP: payload_type=%d"
+		      " encoding_name=%s clock_rate=%d"
+		      " encoding_params=%s",
+		      payload_type_int,
+		      encoding_name,
+		      i_clock_rate,
+		      encoding_params);
 
-	} else if ((!strcmp(attr_key, SDP_ATTR_FMTP)) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_FMTP) == 0) && (attr_value)) {
 		/* a=fmtp */
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(media != NULL, -1,
-			"attribute 'fmtp' not on media level");
+		if (media == NULL) {
+			ULOGE("attribute 'fmtp' not on media level");
+			return -EPROTO;
+		}
 		char *temp3 = NULL;
 		char *payload_type = NULL;
 		char *fmtp = NULL;
 		payload_type = strtok_r(attr_value, " ", &temp3);
 		unsigned int payload_type_int =
 			(payload_type) ? atoi(payload_type) : 0;
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(
-			payload_type_int == media->payload_type, -1,
-			"invalid payload type (%d vs. %d)",
-			payload_type_int, media->payload_type);
-		if ((media->encoding_name) &&
-			(!strcmp(media->encoding_name, SDP_ENCODING_H264))) {
-			fmtp = strtok_r(NULL, "", &temp3);
-			ret = sdp_h264_fmtp_read(&media->h264_fmtp, fmtp);
-			if (ret < 0) {
-				SDP_LOGW("sdp_h264_fmtp_read()"
-					" failed (%d)", ret);
-			}
+
+		if (payload_type_int != media->payload_type) {
+			ULOGE("invalid payload type (%d vs. %d)",
+			      payload_type_int,
+			      media->payload_type);
+			return -EPROTO;
 		}
 
-	} else if ((!strcmp(attr_key, SDP_ATTR_TOOL)) && (attr_value)) {
+		if ((media->encoding_name) &&
+		    (strcmp(media->encoding_name, SDP_ENCODING_H264) == 0)) {
+			fmtp = strtok_r(NULL, "", &temp3);
+			err = sdp_h264_fmtp_read(&media->h264_fmtp, fmtp);
+			if (err < 0)
+				return err;
+		}
+
+	} else if (strcmp(attr_key, SDP_ATTR_TOOL) == 0) {
 		/* a=tool */
 		if (media)
-			SDP_LOGW("attribute 'tool' not on session level");
+			ULOGW("attribute 'tool' not on session level");
 		else
-			session->tool = strdup(attr_value);
-
-	} else if ((!strcmp(attr_key, SDP_ATTR_TYPE)) && (attr_value)) {
+			session->tool = xstrdup(attr_value);
+	} else if (strcmp(attr_key, SDP_ATTR_TYPE) == 0) {
 		/* a=type */
 		if (media)
-			SDP_LOGW("attribute 'type' not on session level");
+			ULOGW("attribute 'type' not on session level");
 		else
-			session->type = strdup(attr_value);
-
-	} else if ((!strcmp(attr_key, SDP_ATTR_CHARSET)) && (attr_value)) {
+			session->type = xstrdup(attr_value);
+	} else if (strcmp(attr_key, SDP_ATTR_CHARSET) == 0) {
 		/* a=charset */
 		if (media)
-			SDP_LOGW("attribute 'charset' not on session level");
+			ULOGW("attribute 'charset' not on session level");
 		else
-			session->charset = strdup(attr_value);
-
-	} else if ((!strcmp(attr_key, SDP_ATTR_CONTROL_URL)) && (attr_value)) {
+			session->charset = xstrdup(attr_value);
+	} else if (strcmp(attr_key, SDP_ATTR_CONTROL_URL) == 0) {
 		/* a=control */
 		if (media)
-			media->control_url = strdup(attr_value);
+			media->control_url = xstrdup(attr_value);
 		else
-			session->control_url = strdup(attr_value);
+			session->control_url = xstrdup(attr_value);
+	} else if ((strcmp(attr_key, SDP_ATTR_RANGE) == 0) && (attr_value)) {
+		/* a=range */
+		if (media)
+			err = sdp_range_attr_read(&media->range, attr_value);
+		else
+			err = sdp_range_attr_read(&session->range, attr_value);
+		if (err < 0)
+			return err;
 
-	} else if (!strcmp(attr_key, SDP_ATTR_RECVONLY)) {
+	} else if (strcmp(attr_key, SDP_ATTR_RECVONLY) == 0) {
 		/* a=recvonly */
 		if (media)
 			media->start_mode = SDP_START_MODE_RECVONLY;
 		else
 			session->start_mode = SDP_START_MODE_RECVONLY;
 
-	} else if (!strcmp(attr_key, SDP_ATTR_SENDRECV)) {
+	} else if (strcmp(attr_key, SDP_ATTR_SENDRECV) == 0) {
 		/* a=sendrecv */
 		if (media)
 			media->start_mode = SDP_START_MODE_SENDRECV;
 		else
 			session->start_mode = SDP_START_MODE_SENDRECV;
 
-	} else if (!strcmp(attr_key, SDP_ATTR_SENDONLY)) {
+	} else if (strcmp(attr_key, SDP_ATTR_SENDONLY) == 0) {
 		/* a=sendonly */
 		if (media)
 			media->start_mode = SDP_START_MODE_SENDONLY;
 		else
 			session->start_mode = SDP_START_MODE_SENDONLY;
 
-	} else if (!strcmp(attr_key, SDP_ATTR_INACTIVE)) {
+	} else if (strcmp(attr_key, SDP_ATTR_INACTIVE) == 0) {
 		/* a=inactive */
 		if (media)
 			media->start_mode = SDP_START_MODE_INACTIVE;
 		else
 			session->start_mode = SDP_START_MODE_INACTIVE;
 
-	} else if ((!strcmp(attr_key, SDP_ATTR_RTCP_XR)) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_XR) == 0) && (attr_value)) {
 		/* a=rtcp-xr */
-		if (media)
-			ret = sdp_rtcp_xr_attr_read(
-				&media->rtcp_xr, attr_value);
-		else
-			ret = sdp_rtcp_xr_attr_read(
-				&session->rtcp_xr, attr_value);
-		if (ret < 0) {
-			SDP_LOGW("sdp_rtcp_xr_attr_read()"
-				" failed (%d)", ret);
+		if (media) {
+			err = sdp_rtcp_xr_attr_read(&media->rtcp_xr,
+						    attr_value);
+		} else {
+			err = sdp_rtcp_xr_attr_read(&session->rtcp_xr,
+						    attr_value);
 		}
+		if (err < 0)
+			return err;
 
-	} else if ((!strcmp(attr_key, SDP_ATTR_RTCP_PORT)) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_PORT) == 0) &&
+		   (attr_value)) {
 		/* a=rtcp */
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(media != NULL, -1,
-			"attribute 'rtcp' not on media level");
+		if (media == NULL) {
+			ULOGE("attribute 'rtcp' not on media level");
+			return -EPROTO;
+		}
 		int port = atoi(attr_value);
 		if (port > 0) {
 			media->dst_control_port = port;
-			SDP_LOGD("SDP: rtcp_dst_port=%d", port);
+			ULOGD("SDP: rtcp_dst_port=%d", port);
 		}
+	} else {
+		/* No special case, create an sdp_attr for the key/value pair */
+		attr = sdp_attr_new();
+		if (attr == NULL) {
+			ULOGE("new SDP attribute creation failed");
+			return -ENOMEM;
+		}
+		attr->key = xstrdup(attr_key);
+		attr->value = xstrdup(attr_value);
+		*out_attr = attr;
 	}
 
-	return ret;
+	return 0;
 }
 
 
-static int sdp_media_write(
-	const struct sdp_media *media,
-	struct sdp_string *sdp,
-	int session_level_connection_addr)
+static int sdp_media_write(const struct sdp_media *media,
+			   struct sdp_string *sdp,
+			   int session_level_connection_addr)
 {
-	int ret, err = 0;
+	int ret;
 
 	if (((!media->connection_addr) || (*media->connection_addr == '\0')) &&
-		(!session_level_connection_addr)) {
-		SDP_LOGE("invalid connection address");
-		return -1;
-	}
-	if ((!media->dst_stream_port) || (!media->dst_control_port)) {
-		SDP_LOGE("invalid port");
-		return -1;
+	    (!session_level_connection_addr)) {
+		ULOGE("invalid connection address");
+		return -EINVAL;
 	}
 	if (!media->payload_type) {
-		SDP_LOGE("invalid payload type");
-		return -1;
+		ULOGE("invalid payload type");
+		return -EINVAL;
 	}
 	if (media->type >= SDP_MEDIA_TYPE_MAX) {
-		SDP_LOGE("invalid media type");
-		return -1;
+		ULOGE("invalid media type");
+		return -EINVAL;
 	}
 	if ((!media->encoding_name) || (*media->encoding_name == '\0')) {
-		SDP_LOGE("invalid encoding name");
-		return -1;
+		ULOGE("invalid encoding name");
+		return -EINVAL;
 	}
 
-	/* media description (m=<media> <port> <proto> <fmt> ...) */
-	sdp_sprintf(sdp, "%c=%s %d " SDP_PROTO_RTPAVP " %d\r\n",
-		SDP_TYPE_MEDIA,
-		sdp_media_type_str[media->type],
-		media->dst_stream_port,
-		media->payload_type);
+	/* Media description (m=<media> <port> <proto> <fmt> ...) */
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   return ret,
+		   sdp,
+		   "%c=%s %d " SDP_PROTO_RTPAVP " %d" SDP_CRLF,
+		   SDP_TYPE_MEDIA,
+		   sdp_media_type_str(media->type),
+		   media->dst_stream_port,
+		   media->payload_type);
 
-	/* media title (i=<media title>) */
-	if ((media->media_title) && (*media->media_title != '\0'))
-		sdp_sprintf(sdp, "%c=%s\r\n",
-			SDP_TYPE_INFORMATION,
-			media->media_title);
+	/* Media title (i=<media title>) */
+	if ((media->media_title) && (*media->media_title != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_INFORMATION,
+			   media->media_title);
+	}
 
-	/* connection data (c=<nettype> <addrtype> <connection-address>) */
+	/* Connection data (c=<nettype> <addrtype> <connection-address>) */
 	if ((media->connection_addr) && (*media->connection_addr != '\0')) {
 		int multicast = 0;
 		int addr_first = atoi(media->connection_addr);
 		if ((addr_first >= SDP_MULTICAST_ADDR_MIN) &&
-			(addr_first <= SDP_MULTICAST_ADDR_MAX))
+		    (addr_first <= SDP_MULTICAST_ADDR_MAX))
 			multicast = 1;
-		sdp_sprintf(sdp, "%c=IN IP4 %s%s\r\n",
-			SDP_TYPE_CONNECTION,
-			media->connection_addr,
-			(multicast) ? "/127" : "");
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%c=IN IP4 %s%s" SDP_CRLF,
+			   SDP_TYPE_CONNECTION,
+			   media->connection_addr,
+			   (multicast) ? "/127" : "");
 	}
 
-	/* start mode (a=<start_mode>) */
+	/* Start mode (a=<start_mode>) */
 	if ((media->start_mode > SDP_START_MODE_UNSPECIFIED) &&
-		(media->start_mode < SDP_START_MODE_MAX)) {
-		sdp_sprintf(sdp, "%c=%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			sdp_start_mode_str[media->start_mode]);
+	    (media->start_mode < SDP_START_MODE_MAX)) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   sdp_start_mode_str(media->start_mode));
 	}
 
-	/* control URL for use with RTSP (a=control) */
+	/* Control URL for use with RTSP (a=control) */
 	if ((media->control_url) && (*media->control_url != '\0')) {
-		sdp_sprintf(sdp, "%c=%s:%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_CONTROL_URL,
-			media->control_url);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%c=%s:%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_CONTROL_URL,
+			   media->control_url);
+	}
+
+	/* Range (a=range) */
+	if (media->range.start.format != SDP_TIME_FORMAT_UNKNOWN) {
+		ret = sdp_range_attr_write(&media->range, sdp);
+		if (ret < 0)
+			return ret;
 	}
 
 	/* RTP/AVP rtpmap attribute (a=rtpmap) */
-	sdp_sprintf(sdp, "%c=%s:%d %s/%d%s%s\r\n",
+	CHECK_FUNC(
+		sdp_sprintf,
+		ret,
+		return ret,
+		sdp,
+		"%c=%s:%d %s/%d%s%s" SDP_CRLF,
 		SDP_TYPE_ATTRIBUTE,
 		SDP_ATTR_RTPAVP_RTPMAP,
 		media->payload_type,
 		media->encoding_name,
 		media->clock_rate,
-		((media->encoding_params) &&
-			(*media->encoding_params != '\0')) ? "/" : "",
-		((media->encoding_params) &&
-			(*media->encoding_params != '\0')) ?
-			media->encoding_params : "");
+		((media->encoding_params) && (*media->encoding_params != '\0'))
+			? "/"
+			: "",
+		((media->encoding_params) && (*media->encoding_params != '\0'))
+			? media->encoding_params
+			: "");
 
 	/* H.264 payload format parameters (a=fmtp) */
-	if (!strcmp(media->encoding_name, SDP_ENCODING_H264) &&
-		(media->h264_fmtp.valid)) {
+	if ((strcmp(media->encoding_name, SDP_ENCODING_H264) == 0) &&
+	    (media->h264_fmtp.valid)) {
 		ret = sdp_h264_fmtp_write(
 			&media->h264_fmtp, media->payload_type, sdp);
-		if (ret < 0) {
-			SDP_LOGE("sdp_h264_fmtp_write()"
-				" failed (%d)", ret);
-			err = ret;
-		}
+		if (ret < 0)
+			return ret;
 	}
 
 	/* RTCP destination port (if not RTP port + 1) (a=rtcp) */
-	if (media->dst_control_port != media->dst_stream_port + 1)
-		sdp_sprintf(sdp, "%c=%s:%d\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_RTCP_PORT,
-			media->dst_control_port);
+	if ((media->dst_stream_port != 0) &&
+	    (media->dst_control_port != media->dst_stream_port + 1)) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   return ret,
+			   sdp,
+			   "%c=%s:%d" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_RTCP_PORT,
+			   media->dst_control_port);
+	}
 
 	/* RTCP extended reports attribute (a=rtcp-xr) */
 	if (media->rtcp_xr.valid) {
 		ret = sdp_rtcp_xr_attr_write(&media->rtcp_xr, sdp);
-		if (ret < 0) {
-			SDP_LOGE("sdp_rtcp_xr_attr_write()"
-				" failed (%d)", ret);
-			err = ret;
-		}
+		if (ret < 0)
+			return ret;
 	}
 
-	/* other attributes (a=<attribute>:<value> or a=<attribute>) */
+	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
 	struct sdp_attr *attr = NULL;
-	list_walk_entry_forward(&media->attrs, attr, node) {
+	list_walk_entry_forward(&media->attrs, attr, node)
+	{
 		if ((attr->key) && (*attr->key != '\0')) {
-			if ((attr->value) && (*attr->value != '\0'))
-				sdp_sprintf(sdp, "%c=%s:%s\r\n",
-					SDP_TYPE_ATTRIBUTE,
-					attr->key,
-					attr->value);
-			else
-				sdp_sprintf(sdp, "%c=%s\r\n",
-					SDP_TYPE_ATTRIBUTE,
-					attr->key);
+			if ((attr->value) && (*attr->value != '\0')) {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   return ret,
+					   sdp,
+					   "%c=%s:%s" SDP_CRLF,
+					   SDP_TYPE_ATTRIBUTE,
+					   attr->key,
+					   attr->value);
+			} else {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   return ret,
+					   sdp,
+					   "%c=%s" SDP_CRLF,
+					   SDP_TYPE_ATTRIBUTE,
+					   attr->key);
+			}
 		}
 	}
 
-	return err;
+	return 0;
 }
 
 
 /* NB: the data pointed by 'value' will be modified */
-static int sdp_media_read(
-	struct sdp_media *media,
-	char *value)
+static int sdp_media_read(struct sdp_media *media, char *value)
 {
-	int ret = 0;
 	char *temp2 = NULL;
 	char *smedia = strtok_r(value, " ", &temp2);
 	char *port = strtok_r(NULL, " ", &temp2);
 	char *proto = strtok_r(NULL, " ", &temp2);
 	char *fmt = strtok_r(NULL, " ", &temp2);
 	if (smedia) {
-		int i;
-		for (i = 0; i < SDP_MEDIA_TYPE_MAX; i++) {
-			if (!strcmp(smedia, sdp_media_type_str[i])) {
-				media->type = i;
-				break;
-			}
+		int res = sdp_media_type_from_str(smedia, &media->type);
+		if (res < 0) {
+			ULOGE("unsupported media type '%s'", smedia);
+			return -EPROTO;
 		}
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(i != SDP_MEDIA_TYPE_MAX,
-			-1, "unsupported media type '%s'", smedia);
-	} else
-		SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(0, -1, "null media type");
+	} else {
+		ULOGE("null media type");
+		return -EPROTO;
+	}
 	int port_int = (port) ? atoi(port) : 0;
 	if (port_int) {
 		media->dst_stream_port = port_int;
 		media->dst_control_port = port_int + 1;
+	} else {
+		media->dst_control_port = 0;
 	}
-	SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(((proto != NULL) &&
-		(!strcmp(proto, SDP_PROTO_RTPAVP))), -1,
-		"unsupported protocol '%s'", (proto) ? proto : "");
+	if ((proto == NULL) || (strcmp(proto, SDP_PROTO_RTPAVP) != 0)) {
+		ULOGE("unsupported protocol '%s'", (proto) ? proto : "");
+		return -EPROTO;
+	}
 	media->payload_type = (fmt) ? atoi(fmt) : 0;
-	/* payload type must be dynamic
+	/* Payload type must be dynamic
 	 * (RFC3551 ch. 6) */
-	SDP_LOG_ERR_AND_RETURN_ERR_IF_FAILED(
-		((media->payload_type >= SDP_DYNAMIC_PAYLOAD_TYPE_MIN) &&
-		(media->payload_type <= SDP_DYNAMIC_PAYLOAD_TYPE_MAX)), -1,
-		"unsupported payload type (%d)", media->payload_type);
+	if ((media->payload_type < SDP_DYNAMIC_PAYLOAD_TYPE_MIN) ||
+	    (media->payload_type > SDP_DYNAMIC_PAYLOAD_TYPE_MAX)) {
+		ULOGE("unsupported payload type (%d)", media->payload_type);
+		return -EPROTO;
+	}
 
-	SDP_LOGD("SDP: media=%s port=%d proto=%s payload_type=%d",
-		smedia, port_int, proto, media->payload_type);
+	ULOGD("SDP: media=%s port=%d proto=%s payload_type=%d",
+	      smedia,
+	      port_int,
+	      proto,
+	      media->payload_type);
 
-	return ret;
+	return 0;
 }
 
 
-char *sdp_description_write(
-	const struct sdp_session *session,
-	int deletion)
+int sdp_description_write(const struct sdp_session *session, char **ret_str)
 {
-	SDP_RETURN_VAL_IF_FAILED(session != NULL, -EINVAL, NULL);
+	int ret;
+	int session_level_connection_addr = 0;
+	struct sdp_string sdp;
+	struct sdp_attr *attr = NULL;
+	struct sdp_media *media = NULL;
+
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
 
 	if ((!session->server_addr) || (*session->server_addr == '\0')) {
-		SDP_LOGE("invalid server address");
-		SDP_RETURN_VAL_IF_FAILED(0, -EINVAL, NULL);
+		ULOGE("invalid server address");
+		return -EINVAL;
 	}
 
-	int err = 0, ret;
-	int session_level_connection_addr = 0;
-
-	char *sdp_str = malloc(SDP_MAX_LEN);
-	SDP_RETURN_VAL_IF_FAILED(sdp_str != NULL, -ENOMEM, NULL);
-	struct sdp_string sdp;
-	sdp.str = sdp_str;
+	sdp.str = malloc(SDP_DEFAULT_LEN);
+	ULOG_ERRNO_RETURN_ERR_IF(sdp.str == NULL, ENOMEM);
 	sdp.len = 0;
-	sdp.max_len = SDP_MAX_LEN;
+	sdp.max_len = SDP_DEFAULT_LEN;
 
-	if (deletion) {
-		/* origin (o=<username> <sess-id> <sess-version>
+	if (session->deletion) {
+		/* Origin (o=<username> <sess-id> <sess-version>
 		 * <nettype> <addrtype> <unicast-address>) */
-		sdp_sprintf(&sdp, "%c=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
-			SDP_TYPE_ORIGIN,
-			session->session_id,
-			session->session_version,
-			session->server_addr);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=- %" PRIu64 " %" PRIu64 " IN IP4 %s" SDP_CRLF,
+			   SDP_TYPE_ORIGIN,
+			   session->session_id,
+			   session->session_version,
+			   session->server_addr);
 
-		return sdp_str;
+		*ret_str = sdp.str;
+		return 0;
 	}
 
-	/* protocol version (v=0) */
-	sdp_sprintf(&sdp, "%c=%d\r\n",
-		SDP_TYPE_VERSION,
-		SDP_VERSION);
+	/* Protocol version (v=0) */
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   goto error,
+		   &sdp,
+		   "%c=%d" SDP_CRLF,
+		   SDP_TYPE_VERSION,
+		   SDP_VERSION);
 
-	/* origin (o=<username> <sess-id> <sess-version>
+	/* Origin (o=<username> <sess-id> <sess-version>
 	 * <nettype> <addrtype> <unicast-address>) */
-	sdp_sprintf(&sdp, "%c=- %"PRIu64" %"PRIu64" IN IP4 %s\r\n",
-		SDP_TYPE_ORIGIN,
-		session->session_id,
-		session->session_version,
-		session->server_addr);
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   goto error,
+		   &sdp,
+		   "%c=- %" PRIu64 " %" PRIu64 " IN IP4 %s" SDP_CRLF,
+		   SDP_TYPE_ORIGIN,
+		   session->session_id,
+		   session->session_version,
+		   session->server_addr);
 
-	/* session name (s=<session name>) */
-	if ((session->session_name) && (*session->session_name != '\0'))
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_SESSION_NAME,
-			session->session_name);
-	else
-		sdp_sprintf(&sdp, "%c= \r\n",
-			SDP_TYPE_SESSION_NAME);
+	/* Session name (s=<session name>) */
+	if ((session->session_name) && (*session->session_name != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_SESSION_NAME,
+			   session->session_name);
+	} else {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c= " SDP_CRLF,
+			   SDP_TYPE_SESSION_NAME);
+	}
 
-	/* session information (i=<session description>) */
-	if ((session->session_info) && (*session->session_info != '\0'))
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_INFORMATION,
-			session->session_info);
+	/* Session information (i=<session description>) */
+	if ((session->session_info) && (*session->session_info != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_INFORMATION,
+			   session->session_info);
+	}
 
 	/* URI (u=<uri>) */
-	if ((session->uri) && (*session->uri == '\0'))
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_URI,
-			session->uri);
+	if ((session->uri) && (*session->uri != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_URI,
+			   session->uri);
+	}
 
-	/* email address (e=<email-address>) */
-	if ((session->email) && (*session->email == '\0'))
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_EMAIL,
-			session->email);
+	/* Email address (e=<email-address>) */
+	if ((session->email) && (*session->email != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_EMAIL,
+			   session->email);
+	}
 
-	/* phone number (p=<phone-number>) */
-	if ((session->phone) && (*session->phone == '\0'))
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_PHONE,
-			session->phone);
+	/* Phone number (p=<phone-number>) */
+	if ((session->phone) && (*session->phone != '\0')) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_PHONE,
+			   session->phone);
+	}
 
-	/* connection data (c=<nettype> <addrtype> <connection-address>) */
+	/* Connection data (c=<nettype> <addrtype> <connection-address>) */
 	if ((session->connection_addr) && (*session->connection_addr != '\0')) {
 		session_level_connection_addr = 1;
 		int multicast = 0;
 		int addr_first = atoi(session->connection_addr);
 		if ((addr_first >= SDP_MULTICAST_ADDR_MIN) &&
-			(addr_first <= SDP_MULTICAST_ADDR_MAX))
+		    (addr_first <= SDP_MULTICAST_ADDR_MAX))
 			multicast = 1;
-		sdp_sprintf(&sdp, "%c=IN IP4 %s%s\r\n",
-			SDP_TYPE_CONNECTION,
-			session->connection_addr,
-			(multicast) ? "/127" : "");
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=IN IP4 %s%s" SDP_CRLF,
+			   SDP_TYPE_CONNECTION,
+			   session->connection_addr,
+			   (multicast) ? "/127" : "");
 	}
 
-	/* timing (t=<start-time> <stop-time>) */
+	/* Timing (t=<start-time> <stop-time>) */
 	/*TODO*/
-	sdp_sprintf(&sdp, "%c=0 0\r\n",
-		SDP_TYPE_TIME);
+	CHECK_FUNC(sdp_sprintf,
+		   ret,
+		   goto error,
+		   &sdp,
+		   "%c=0 0" SDP_CRLF,
+		   SDP_TYPE_TIME);
 
-	/* tool (a=tool) */
+	/* Tool (a=tool) */
 	if ((session->tool) && (*session->tool != '\0')) {
-		sdp_sprintf(&sdp, "%c=%s:%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_TOOL,
-			session->tool);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s:%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_TOOL,
+			   session->tool);
 	}
 
-	/* start mode (a=<start_mode>) */
+	/* Start mode (a=<start_mode>) */
 	if ((session->start_mode > SDP_START_MODE_UNSPECIFIED) &&
-		(session->start_mode < SDP_START_MODE_MAX)) {
-		sdp_sprintf(&sdp, "%c=%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			sdp_start_mode_str[session->start_mode]);
+	    (session->start_mode <= SDP_START_MODE_INACTIVE)) {
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   sdp_start_mode_str(session->start_mode));
 	}
 
-	/* session type (a=type) */
+	/* Session type (a=type) */
 	if ((session->type) && (*session->type != '\0')) {
-		sdp_sprintf(&sdp, "%c=%s:%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_TYPE,
-			session->type);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s:%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_TYPE,
+			   session->type);
 	}
 
-	/* charset (a=charset) */
+	/* Charset (a=charset) */
 	if ((session->charset) && (*session->charset != '\0')) {
-		sdp_sprintf(&sdp, "%c=%s:%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_CHARSET,
-			session->charset);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s:%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_CHARSET,
+			   session->charset);
 	}
 
-	/* control URL for use with RTSP (a=control) */
+	/* Control URL for use with RTSP (a=control) */
 	if ((session->control_url) && (*session->control_url != '\0')) {
-		sdp_sprintf(&sdp, "%c=%s:%s\r\n",
-			SDP_TYPE_ATTRIBUTE,
-			SDP_ATTR_CONTROL_URL,
-			session->control_url);
+		CHECK_FUNC(sdp_sprintf,
+			   ret,
+			   goto error,
+			   &sdp,
+			   "%c=%s:%s" SDP_CRLF,
+			   SDP_TYPE_ATTRIBUTE,
+			   SDP_ATTR_CONTROL_URL,
+			   session->control_url);
+	}
+
+	/* Range (a=range) */
+	if (session->range.start.format != SDP_TIME_FORMAT_UNKNOWN) {
+		ret = sdp_range_attr_write(&session->range, &sdp);
+		if (ret < 0)
+			goto error;
 	}
 
 	/* RTCP extended reports attribute (a=rtcp-xr) */
 	if (session->rtcp_xr.valid) {
 		ret = sdp_rtcp_xr_attr_write(&session->rtcp_xr, &sdp);
-		if (ret < 0) {
-			SDP_LOGE("sdp_rtcp_xr_attr_write()"
-				" failed (%d)", ret);
-			err = ret;
+		if (ret < 0)
+			goto error;
+	}
+
+	/* Other attributes (a=<attribute>:<value> or a=<attribute>) */
+	list_walk_entry_forward(&session->attrs, attr, node)
+	{
+		if ((attr->key) && (*attr->key != '\0')) {
+			if ((attr->value) && (*attr->value != '\0')) {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   goto error,
+					   &sdp,
+					   "%c=%s:%s" SDP_CRLF,
+					   SDP_TYPE_ATTRIBUTE,
+					   attr->key,
+					   attr->value);
+			} else {
+				CHECK_FUNC(sdp_sprintf,
+					   ret,
+					   goto error,
+					   &sdp,
+					   "%c=%s" SDP_CRLF,
+					   SDP_TYPE_ATTRIBUTE,
+					   attr->key);
+			}
 		}
 	}
 
-	/* other attributes (a=<attribute>:<value> or a=<attribute>) */
-	struct sdp_attr *attr = NULL;
-	list_walk_entry_forward(&session->attrs, attr, node) {
-		if ((attr->key) && (*attr->key == '\0')) {
-			if ((attr->value) && (*attr->value != '\0'))
-				sdp_sprintf(&sdp, "%c=%s:%s\r\n",
-					SDP_TYPE_ATTRIBUTE,
-					attr->key,
-					attr->value);
-			else
-				sdp_sprintf(&sdp, "%c=%s\r\n",
-					SDP_TYPE_ATTRIBUTE,
-					attr->key);
-		}
+	/* Media (m=...) */
+	list_walk_entry_forward(&session->medias, media, node)
+	{
+		ret = sdp_media_write(
+			media, &sdp, session_level_connection_addr);
+		if (ret < 0)
+			goto error;
 	}
 
-	/* media (m=...) */
-	struct sdp_media *media = NULL;
-	list_walk_entry_forward(&session->medias, media, node) {
-		ret = sdp_media_write(media, &sdp,
-			session_level_connection_addr);
-		if (ret < 0) {
-			SDP_LOGE("sdp_media_write()"
-				" failed (%d)", ret);
-			err = ret;
-			break;
-		}
-	}
+	*ret_str = sdp.str;
+	return 0;
 
-	if (err != 0) {
-		free(sdp_str);
-		SDP_RETURN_VAL_IF_FAILED(0, -EINVAL, NULL);
-	}
-
-	return sdp_str;
+error:
+	free(sdp.str);
+	return ret;
 }
 
 
-struct sdp_session *sdp_description_read(
-	const char *session_desc)
+int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 {
-	SDP_RETURN_VAL_IF_FAILED(session_desc != NULL, -EINVAL, NULL);
-
-	int error = 0, ret;
+	int ret;
 	char *sdp;
 	struct sdp_media *media = NULL;
 	char *p, type, *value, *temp;
+	uint32_t mandatory_fields = 0;
+	struct sdp_session *session = NULL;
 
-	struct sdp_session *session = sdp_session_new();
-	SDP_RETURN_VAL_IF_FAILED(session != NULL, -ENOMEM, NULL);
+	ULOG_ERRNO_RETURN_ERR_IF(session_desc == NULL, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(ret_obj == NULL, EINVAL);
+
+	session = sdp_session_new();
+	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, ENOMEM);
 
 	sdp = strdup(session_desc);
 	if (sdp == NULL) {
-		SDP_LOG_ERRNO("allocation failed", -ENOMEM);
-		error = 1;
-		goto cleanup;
+		ret = -ENOMEM;
+		ULOG_ERRNO("strdup", -ret);
+		goto error;
 	}
 
-	p = strtok_r(sdp, "\n", &temp);
+	p = strtok_r(sdp, SDP_CRLF, &temp);
 	while (p) {
-		/* each line should be more than 2 chars long and in the form
+		/* Each line should be more than 2 chars long and in the form
 		 * "<type>=<value>" with <type> being a single char */
 		if ((strlen(p) <= 2) || (p[1] != '=')) {
-			p = strtok_r(NULL, "\n", &temp);
+			p = strtok_r(NULL, SDP_CRLF, &temp);
 			continue;
 		}
-
-		/* remove the '\r' before '\n' if present */
-		if (p[strlen(p) - 1] == '\r')
-			p[strlen(p) - 1] = '\0';
 
 		/* <type>=<value>, value is always at offset 2 */
 		type = *p;
 		value = p + 2;
 
 		switch (type) {
-		case SDP_TYPE_VERSION:
-		{
-			/* protocol version (v=0) */
+		case SDP_TYPE_VERSION: {
+			mandatory_fields |= SDP_MANDATORY_TYPE_MASK_VERSION;
+			/* Protocol version (v=0) */
 			int version = -1;
 			if (sscanf(value, "%d", &version) == SDP_VERSION)
-				SDP_LOGD("SDP: version=%d", version);
+				ULOGD("SDP: version=%d", version);
 			if (version != 0) {
 				/* SDP version must be 0 (RFC4566) */
-				SDP_LOGW("unsupported SDP version (%d)",
-					version);
-				error = 1;
-				goto cleanup;
+				ULOGE("unsupported SDP version (%d)", version);
+				ret = -EPROTO;
+				goto error;
 			}
 			break;
 		}
 
-		case SDP_TYPE_ORIGIN:
-		{
-			/* origin (o=<username> <sess-id> <sess-version>
+		case SDP_TYPE_ORIGIN: {
+			mandatory_fields |= SDP_MANDATORY_TYPE_MASK_ORIGIN;
+			/* Origin (o=<username> <sess-id> <sess-version>
 			 * <nettype> <addrtype> <unicast-address>) */
 			char *temp2 = NULL;
 			char *username = strtok_r(value, " ", &temp2);
 			char *sess_id = strtok_r(NULL, " ", &temp2);
 			char *sess_version = strtok_r(NULL, " ", &temp2);
 			char *nettype = strtok_r(NULL, " ", &temp2);
-			if ((!nettype) || (strcmp(nettype, "IN") != 0))	{
-				/* network type must be 'IN'
+			if ((!nettype) || (strcmp(nettype, "IN") != 0)) {
+				/* Network type must be 'IN'
 				 * (RFC4566 ch. 5.2) */
-				SDP_LOGW("unsupported network type '%s'",
-					(nettype) ? nettype : "");
-				error = 1;
-				goto cleanup;
+				ULOGE("unsupported network type '%s'",
+				      (nettype) ? nettype : "");
+				ret = -EPROTO;
+				goto error;
 			}
 			char *addrtype = strtok_r(NULL, " ", &temp2);
 			if ((!addrtype) || (strcmp(addrtype, "IP4") != 0)) {
-				/* only IPv4 is supported */
-				SDP_LOGW("unsupported address type '%s'",
-					(addrtype) ? addrtype : "");
-				error = 1;
-				goto cleanup;
+				/* Only IPv4 is supported */
+				ULOGE("unsupported address type '%s'",
+				      (addrtype) ? addrtype : "");
+				ret = -EPROTO;
+				goto error;
 			}
 			char *unicast_address = strtok_r(NULL, " ", &temp2);
-			if (unicast_address)
-				session->server_addr = strdup(unicast_address);
+			session->server_addr = xstrdup(unicast_address);
 			session->session_id = (sess_id) ? atoll(sess_id) : 0;
-			session->session_version = (sess_version) ?
-				atoll(sess_version) : 0;
-			SDP_LOGD("SDP: username=%s sess_id=%"PRIu64
-				" sess_version=%"PRIu64" nettype=%s"
-				" addrtype=%s unicast_address=%s",
-				username, session->session_id,
-				session->session_version, nettype,
-				addrtype, unicast_address);
+			session->session_version =
+				(sess_version) ? atoll(sess_version) : 0;
+			ULOGD("SDP: username=%s sess_id=%" PRIu64
+			      " sess_version=%" PRIu64
+			      " nettype=%s"
+			      " addrtype=%s unicast_address=%s",
+			      username,
+			      session->session_id,
+			      session->session_version,
+			      nettype,
+			      addrtype,
+			      unicast_address);
 			break;
 		}
 
-		case SDP_TYPE_SESSION_NAME:
-		{
-			/* session name (s=<session name>) */
+		case SDP_TYPE_SESSION_NAME: {
+			mandatory_fields |=
+				SDP_MANDATORY_TYPE_MASK_SESSION_NAME;
+			/* Session name (s=<session name>) */
 			session->session_name = strdup(value);
-			SDP_LOGD("SDP: session name=%s", session->session_name);
+			ULOGD("SDP: session name=%s", session->session_name);
 			break;
 		}
 
-		case SDP_TYPE_INFORMATION:
-		{
-			/* session information (i=<session description>)
+		case SDP_TYPE_INFORMATION: {
+			/* Session information (i=<session description>)
 			 * or media title (i=<media title>) */
 			if (media) {
 				media->media_title = strdup(value);
-				SDP_LOGD("SDP: media title=%s",
-					media->media_title);
+				ULOGD("SDP: media title=%s",
+				      media->media_title);
 			} else {
 				session->session_info = strdup(value);
-				SDP_LOGD("SDP: session info=%s",
-					session->session_info);
+				ULOGD("SDP: session info=%s",
+				      session->session_info);
 			}
 			break;
 		}
 
-		case SDP_TYPE_URI:
-		{
+		case SDP_TYPE_URI: {
 			/* URI (u=<uri>) */
 			session->uri = strdup(value);
-			SDP_LOGD("SDP: uri=%s", session->uri);
+			ULOGD("SDP: uri=%s", session->uri);
 			break;
 		}
 
-		case SDP_TYPE_EMAIL:
-		{
-			/* email address (e=<email-address>) */
+		case SDP_TYPE_EMAIL: {
+			/* Email address (e=<email-address>) */
 			session->email = strdup(value);
-			SDP_LOGD("SDP: email=%s", session->email);
+			ULOGD("SDP: email=%s", session->email);
 			break;
 		}
 
-		case SDP_TYPE_PHONE:
-		{
-			/* phone number (p=<phone-number>) */
+		case SDP_TYPE_PHONE: {
+			/* Phone number (p=<phone-number>) */
 			session->phone = strdup(value);
-			SDP_LOGD("SDP: phone=%s", session->phone);
+			ULOGD("SDP: phone=%s", session->phone);
 			break;
 		}
 
-		case SDP_TYPE_CONNECTION:
-		{
-			/* connection data (c=<nettype> <addrtype>
+		case SDP_TYPE_CONNECTION: {
+			mandatory_fields |= SDP_MANDATORY_TYPE_MASK_CONNECTION;
+			/* Connection data (c=<nettype> <addrtype>
 			 * <connection-address>) */
 			char *temp2 = NULL;
 			char *nettype = strtok_r(value, " ", &temp2);
 			if ((!nettype) || (strcmp(nettype, "IN") != 0)) {
-				/* network type must be 'IN'
+				/* Network type must be 'IN'
 				 * (RFC4566 ch. 5.7) */
-				SDP_LOGW("unsupported network type '%s'",
-					(nettype) ? nettype : "");
-				error = 1;
-				goto cleanup;
+				ULOGE("unsupported network type '%s'",
+				      (nettype) ? nettype : "");
+				ret = -EPROTO;
+				goto error;
 			}
 			char *addrtype = strtok_r(NULL, " ", &temp2);
 			if ((!addrtype) || (strcmp(addrtype, "IP4") != 0)) {
-				/* only IPv4 is supported */
-				SDP_LOGW("unsupported address type '%s'",
-					(addrtype) ? addrtype : "");
-				error = 1;
-				goto cleanup;
+				/* Only IPv4 is supported */
+				ULOGE("unsupported address type '%s'",
+				      (addrtype) ? addrtype : "");
+				ret = -EPROTO;
+				goto error;
 			}
 			char *connection_address = strtok_r(NULL, " ", &temp2);
 			if (!connection_address)
@@ -1333,8 +2165,9 @@ struct sdp_session *sdp_description_read(
 			int addr_first = atoi(connection_address);
 			int multicast =
 				((addr_first >= SDP_MULTICAST_ADDR_MIN) &&
-				(addr_first <= SDP_MULTICAST_ADDR_MAX)) ?
-				1 : 0;
+				 (addr_first <= SDP_MULTICAST_ADDR_MAX))
+					? 1
+					: 0;
 			if (multicast) {
 				char *p2 = strchr(connection_address, '/');
 				if (p2 != NULL)
@@ -1344,23 +2177,27 @@ struct sdp_session *sdp_description_read(
 				media->connection_addr =
 					strdup(connection_address);
 				media->multicast = multicast;
-				SDP_LOGD("SDP: media nettype=%s addrtype=%s"
-					" connection_address=%s",
-					nettype, addrtype, connection_address);
+				ULOGD("SDP: media nettype=%s addrtype=%s"
+				      " connection_address=%s",
+				      nettype,
+				      addrtype,
+				      connection_address);
 			} else {
 				session->connection_addr =
 					strdup(connection_address);
 				session->multicast = multicast;
-				SDP_LOGD("SDP: nettype=%s addrtype=%s"
-					" connection_address=%s",
-					nettype, addrtype, connection_address);
+				ULOGD("SDP: nettype=%s addrtype=%s"
+				      " connection_address=%s",
+				      nettype,
+				      addrtype,
+				      connection_address);
 			}
 			break;
 		}
 
-		case SDP_TYPE_TIME:
-		{
-			/* time (t=<start-time> <stop-time>) */
+		case SDP_TYPE_TIME: {
+			mandatory_fields |= SDP_MANDATORY_TYPE_MASK_TIME;
+			/* Time (t=<start-time> <stop-time>) */
 			char *temp2 = NULL;
 			char *start_time = NULL;
 			start_time = strtok_r(value, " ", &temp2);
@@ -1370,57 +2207,43 @@ struct sdp_session *sdp_description_read(
 			stop_time = strtok_r(NULL, " ", &temp2);
 			uint64_t stop_time_int =
 				(stop_time) ? atoll(stop_time) : 0;
-			SDP_LOGD("SDP: start_time=%"PRIu64" stop_time=%"PRIu64,
-				start_time_int, stop_time_int);
-			/*TODO*/
+			ULOGD("SDP: start_time=%" PRIu64 "stop_time=%" PRIu64,
+			      start_time_int,
+			      stop_time_int);
+			/* TODO */
 			break;
 		}
 
-		case SDP_TYPE_MEDIA:
-		{
-			/* media (m=...) */
-			media = sdp_session_media_add(session);
-			if (media == NULL) {
-				SDP_LOGW("sdp_session_media_add() failed");
-				error = 1;
-				goto cleanup;
-			}
+		case SDP_TYPE_MEDIA: {
+			/* Media (m=...) */
+			ret = sdp_session_media_add(session, &media);
+			if (ret < 0)
+				goto error;
 			ret = sdp_media_read(media, value);
-			if (ret < 0) {
-				SDP_LOGW("sdp_media_read()"
-					" failed (%d)", ret);
-				error = 1;
-				goto cleanup;
-			}
+			if (ret < 0)
+				goto error;
 			break;
 		}
 
-		case SDP_TYPE_ATTRIBUTE:
-		{
-			/* attributes (a=...) */
+		case SDP_TYPE_ATTRIBUTE: {
+			/* Attributes (a=...) */
 			struct sdp_attr *attr = NULL;
-			if (media) {
-				attr = sdp_media_attr_add(media);
-				if (attr == NULL) {
-					SDP_LOGW("sdp_media_attr_add() failed");
-					error = 1;
-					goto cleanup;
-				}
-			} else {
-				attr = sdp_session_attr_add(session);
-				if (attr == NULL) {
-					SDP_LOGW("sdp_session_attr_add()"
-						" failed");
-					error = 1;
-					goto cleanup;
-				}
-			}
+			ret = sdp_attr_read(session, media, value, &attr);
+			if (ret < 0)
+				goto error;
 
-			ret = sdp_attr_read(attr, session, media, value);
-			if (ret < 0) {
-				SDP_LOGW("sdp_attr_read() failed (%d)", ret);
-				error = 1;
-				goto cleanup;
+			if (!attr)
+				break;
+
+			if (media) {
+				ret = sdp_media_attr_add_existing(media, attr);
+				if (ret < 0)
+					goto error;
+			} else {
+				ret = sdp_session_attr_add_existing(session,
+								    attr);
+				if (ret < 0)
+					goto error;
 			}
 			break;
 		}
@@ -1428,11 +2251,12 @@ struct sdp_session *sdp_description_read(
 		default:
 			break;
 		}
-		p = strtok_r(NULL, "\n", &temp);
+		p = strtok_r(NULL, SDP_CRLF, &temp);
 	}
 
-	/* copy session-level parameters to media-level if undefined */
-	list_walk_entry_forward(&session->medias, media, node) {
+	/* Copy session-level parameters to media-level if undefined */
+	list_walk_entry_forward(&session->medias, media, node)
+	{
 		if ((!media->connection_addr) && (session->connection_addr)) {
 			media->connection_addr =
 				strdup(session->connection_addr);
@@ -1444,12 +2268,38 @@ struct sdp_session *sdp_description_read(
 			media->rtcp_xr = session->rtcp_xr;
 	}
 
-cleanup:
-	free(sdp);
+	if (mandatory_fields == SDP_MANDATORY_TYPE_MASK_ORIGIN) {
+		/* If only origin is present, this is a deletion SDP */
+		ULOGD("SDP is of type deletion");
+		session->deletion = 1;
+	} else if ((SDP_MANDATORY_TYPE_MASK_ALL & mandatory_fields) !=
+		   SDP_MANDATORY_TYPE_MASK_ALL) {
+		/* Check that mandatory fields are present */
+		if ((SDP_MANDATORY_TYPE_MASK_VERSION & mandatory_fields) !=
+		    SDP_MANDATORY_TYPE_MASK_VERSION)
+			ULOGE("missing mandatory field version (v=)");
+		if ((SDP_MANDATORY_TYPE_MASK_ORIGIN & mandatory_fields) !=
+		    SDP_MANDATORY_TYPE_MASK_ORIGIN)
+			ULOGE("missing mandatory field origin (o=)");
+		if ((SDP_MANDATORY_TYPE_MASK_SESSION_NAME & mandatory_fields) !=
+		    SDP_MANDATORY_TYPE_MASK_SESSION_NAME)
+			ULOGE("missing mandatory field session name (s=)");
+		if ((SDP_MANDATORY_TYPE_MASK_CONNECTION & mandatory_fields) !=
+		    SDP_MANDATORY_TYPE_MASK_CONNECTION)
+			ULOGE("missing mandatory field connection (c=)");
+		if ((SDP_MANDATORY_TYPE_MASK_TIME & mandatory_fields) !=
+		    SDP_MANDATORY_TYPE_MASK_TIME)
+			ULOGE("missing mandatory field time (t=)");
+		ret = -EPROTO;
+		goto error;
+	}
 
-	if (error) {
-		free(session);
-		return NULL;
-	} else
-		return session;
+	free(sdp);
+	*ret_obj = session;
+	return 0;
+
+error:
+	free(sdp);
+	sdp_session_destroy(session);
+	return ret;
 }
