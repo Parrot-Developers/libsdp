@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <futils/futils.h>
+
 #define ULOG_TAG sdp
 #include <ulog.h>
 
@@ -166,8 +168,8 @@ sdp_vsprintf(struct sdp_string *str, const char *fmt, va_list args)
 }
 
 
-static inline int __attribute__((__format__(__printf__, 2, 3)))
-sdp_sprintf(struct sdp_string *str, const char *fmt, ...)
+static inline int FUTILS_ATTRIBUTE_FORMAT_PRINTF(2, 3)
+	sdp_sprintf(struct sdp_string *str, const char *fmt, ...)
 {
 	int ret;
 	va_list args;

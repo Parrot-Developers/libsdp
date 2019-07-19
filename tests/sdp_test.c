@@ -25,12 +25,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arpa/inet.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef _WIN32
+#	include <winsock2.h>
+#else
+#	include <arpa/inet.h>
+#endif
 
 #define ULOG_TAG sdp_test
 #include <ulog.h>
