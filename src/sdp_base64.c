@@ -104,20 +104,20 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 	ULOG_ERRNO_RETURN_ERR_IF((n % 4) != 0, EINVAL);
 
 	size_t padding = 0;
-	if ((n >= 1) && (str[n - 1] == '=')) {
-		padding = 1;
-		if ((n >= 2) && (str[n - 2] == '=')) {
-			padding = 2;
-			if ((n >= 3) && (str[n - 3] == '='))
-				padding = 3;
-		}
+	size_t i;
+	for (i = n; i && str[i - 1] == '='; i--)
+		padding++;
+
+	if (padding > 2) {
+		ULOGE("%s: invalid padding in input base64 string", __func__);
+		return -EINVAL;
 	}
 
-	size_t out_len = (n / 4) * 3 - padding;
+	size_t out_len = (n / 4) * 3;
 	uint8_t *_out = calloc(out_len, 1);
 	ULOG_ERRNO_RETURN_ERR_IF(_out == NULL, ENOMEM);
 
-	size_t i, j = 0;
+	size_t j = 0;
 	uint32_t acc = 0;
 	for (i = 0; i < n; i++) {
 		char c = str[i];

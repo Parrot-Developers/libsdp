@@ -57,32 +57,18 @@ static void print_h264_fmtp(struct sdp_h264_fmtp *fmtp, const char *prefix)
 	printf("%s   -- profile-iop: 0x%02X\n", prefix, fmtp->profile_iop);
 	printf("%s   -- level_idc: %d\n", prefix, fmtp->level_idc);
 	if (fmtp->sps) {
-		char sps[300];
-		unsigned int i, len;
-		for (i = 0, len = 0; i < fmtp->sps_size; i++) {
-			len += snprintf(sps + len,
-					sizeof(sps) - len,
-					"%02X ",
-					fmtp->sps[i]);
-		}
-		printf("%s   -- SPS (size %d): %s\n",
-		       prefix,
-		       fmtp->sps_size,
-		       sps);
+		unsigned int i;
+		printf("%s   -- SPS (size %d):", prefix, fmtp->sps_size);
+		for (i = 0; i < fmtp->sps_size; i++)
+			printf(" %02X", fmtp->sps[i]);
+		printf("\n");
 	}
 	if (fmtp->pps) {
-		char pps[300];
-		unsigned int i, len;
-		for (i = 0, len = 0; i < fmtp->pps_size; i++) {
-			len += snprintf(pps + len,
-					sizeof(pps) - len,
-					"%02X ",
-					fmtp->pps[i]);
-		}
-		printf("%s   -- PPS (size %d): %s\n",
-		       prefix,
-		       fmtp->pps_size,
-		       pps);
+		unsigned int i;
+		printf("%s   -- PPS (size %d):", prefix, fmtp->pps_size);
+		for (i = 0; i < fmtp->pps_size; i++)
+			printf(" %02X", fmtp->pps[i]);
+		printf("\n");
 	}
 }
 

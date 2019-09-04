@@ -150,12 +150,12 @@ sdp_vsprintf(struct sdp_string *str, const char *fmt, va_list args)
 {
 	if (str->len >= str->max_len)
 		return -ENOBUFS;
-	int len = vsnprintf(
-		str->str + str->len, str->max_len - str->len, fmt, args);
+	size_t available = str->max_len - str->len;
+	int len = vsnprintf(str->str + str->len, available, fmt, args);
 	if (len < 0)
 		return len;
-	if (len >= (signed)(str->max_len - str->len)) {
-		size_t new_len = (str->len + len + 1023) & ~1023;
+	if (len >= (int)available) {
+		size_t new_len = (str->len + len + 1024) & ~1023;
 		void *tmp = realloc(str->str, new_len);
 		if (!tmp)
 			return -ENOMEM;

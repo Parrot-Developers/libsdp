@@ -243,6 +243,10 @@ int sdp_session_compare(const struct sdp_session *a,
 		return 1;
 	}
 
+	if (a->deletion != b->deletion)
+		/* SDPs differ if only one of the SDP is of 'deletion' type */
+		return 1;
+
 	/* Compare the session name */
 	if (a->session_name && b->session_name) {
 		if (strcmp(a->session_name, b->session_name)) {
@@ -1227,8 +1231,8 @@ static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 	char *val = NULL;
 
 	xr->valid = 0;
-	xr_format = strtok_r(value, " ", &temp1);
-	while (xr_format) {
+	for (xr_format = strtok_r(value, " ", &temp1); xr_format;
+	     xr_format = strtok_r(NULL, " ", &temp1)) {
 		val = strchr(xr_format, '=');
 		if (val != NULL) {
 			*val = '\0';
@@ -1312,8 +1316,6 @@ static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 			/* de-jitter-buffer */
 			xr->djb_metrics_report = 1;
 		}
-
-		xr_format = strtok_r(NULL, " ", &temp1);
 	};
 
 	xr->valid = 1;
@@ -1408,6 +1410,10 @@ static int sdp_attr_read(struct sdp_session *session,
 		if ((media->encoding_name) &&
 		    (strcmp(media->encoding_name, SDP_ENCODING_H264) == 0)) {
 			fmtp = strtok_r(NULL, "", &temp3);
+			if (fmtp == NULL) {
+				ULOGE("missing H264 format");
+				return -EPROTO;
+			}
 			err = sdp_h264_fmtp_read(&media->h264_fmtp, fmtp);
 			if (err < 0)
 				return err;
@@ -1754,6 +1760,12 @@ int sdp_description_write(const struct sdp_session *session, char **ret_str)
 	sdp.len = 0;
 	sdp.max_len = SDP_DEFAULT_LEN;
 
+	/**
+	 * SDP deletion is a custom and non standard way to signal a session
+	 * doesn't exist anymore. A SDP deletion contains single line consisting
+	 * of the origin field.
+	 * It is inspired from the SAP deletion message (RFC 2974 chapter 6).
+	 */
 	if (session->deletion) {
 		/* Origin (o=<username> <sess-id> <sess-version>
 		 * <nettype> <addrtype> <unicast-address>) */
@@ -2160,8 +2172,11 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 				goto error;
 			}
 			char *connection_address = strtok_r(NULL, " ", &temp2);
-			if (!connection_address)
-				continue;
+			if (!connection_address) {
+				ULOGE("missing connection address");
+				ret = -EPROTO;
+				goto error;
+			}
 			int addr_first = atoi(connection_address);
 			int multicast =
 				((addr_first >= SDP_MULTICAST_ADDR_MIN) &&
