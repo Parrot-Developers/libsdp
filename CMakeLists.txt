@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 project(sdp VERSION 1.0)
 
+set(LIB_SOURCES
+      src/sdp.c
+      src/sdp_base64.c
+)
+
+add_library(${PROJECT_NAME} ${LIB_SOURCES})
+
 # checks if set up rpath exists for install
 if(COMMAND set_up_rpath)
     set_up_rpath()
@@ -8,13 +15,6 @@ else()
     message("Set up rpath not defined!")
 endif()
 
-
-set(LIB_SOURCES
-      src/sdp.c
-      src/sdp_base64.c
-)
-
-add_library(${PROJECT_NAME} ${LIB_SOURCES})
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 set_target_properties(sdp PROPERTIES
