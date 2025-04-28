@@ -647,9 +647,8 @@ static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
 				   SDP_TIME_NPT_NOW);
 		} else {
 			ULOG_ERRNO_RETURN_ERR_IF(time->npt.infinity, EINVAL);
-			unsigned int hrs, min;
-			unsigned int sec =
-				time->npt.sec + time->npt.usec / 1000000;
+			uint64_t hrs, min;
+			uint64_t sec = time->npt.sec + time->npt.usec / 1000000;
 			hrs = sec / (60 * 60);
 			min = sec / 60 - hrs * 60;
 			sec = sec - min * 60 - hrs * 60 * 60;
@@ -662,7 +661,8 @@ static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
 					   ret,
 					   return ret,
 					   sdp,
-					   "%u:%02u:%02u%s",
+					   "%" PRIu64 ":%02" PRIu64
+					   ":%02" PRIu64 "%s",
 					   hrs,
 					   min,
 					   sec,
@@ -672,7 +672,7 @@ static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
 					   ret,
 					   return ret,
 					   sdp,
-					   "%u%s",
+					   "%" PRIu64 "%s",
 					   sec,
 					   (usec != 0.) ? fraction + 1 : "");
 			}
@@ -711,7 +711,7 @@ static int sdp_time_read(struct sdp_time *time, char *value)
 			unsigned int hrs = atoi(hrs_str);
 			unsigned int min = atoi(min_str);
 			float sec_f = atof(sec_str);
-			time->npt.sec = (time_t)sec_f;
+			time->npt.sec = (uint64_t)sec_f;
 			time->npt.sec += min * 60 + hrs * 60 * 60;
 			time->npt.usec = (uint32_t)(
 				(sec_f - (float)((unsigned int)sec_f)) *
@@ -723,7 +723,7 @@ static int sdp_time_read(struct sdp_time *time, char *value)
 			} else {
 				/* seconds only */
 				float sec = atof(value);
-				time->npt.sec = (time_t)sec;
+				time->npt.sec = (uint64_t)sec;
 				time->npt.usec = (uint32_t)(
 					(sec - (float)time->npt.sec) * 1000000);
 			}

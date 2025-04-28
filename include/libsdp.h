@@ -104,21 +104,21 @@ enum sdp_time_format {
 struct sdp_time_npt {
 	int now;
 	int infinity;
-	time_t sec;
+	uint64_t sec;
 	uint32_t usec;
 };
 
 /* SMPTE Relative Timestamps, see RFC 2326 chapter 3.5 */
 struct sdp_time_smpte {
 	int infinity;
-	time_t sec;
+	uint64_t sec;
 	unsigned int frames;
 };
 
 /* Absolute Time (UTC, ISO 8601), see RFC 2326 chapter 3.7 */
 struct sdp_time_absolute {
 	int infinity;
-	time_t sec;
+	uint64_t sec;
 	uint32_t usec;
 };
 
