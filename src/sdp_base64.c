@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "sdp.h"
+#include "sdp_priv.h"
 
 
-static inline char encode_char(unsigned val)
+static inline char encode_char(unsigned char val)
 {
 	if (val <= 25)
 		return 'A' + val;
@@ -47,6 +47,7 @@ int sdp_base64_encode(const void *data, size_t size, char **out)
 {
 	ULOG_ERRNO_RETURN_ERR_IF(data == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(size == 0, EINVAL);
+	ULOG_ERRNO_RETURN_ERR_IF(size > (MAX_SDP_BASE64_LEN / 4) * 3, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(out == NULL, EINVAL);
 
 	const uint8_t *_data = (const uint8_t *)data;
@@ -99,8 +100,9 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 	ULOG_ERRNO_RETURN_ERR_IF(out == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(out_size == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(str == NULL, EINVAL);
-	ULOG_ERRNO_RETURN_ERR_IF(strlen(str) == 0, EINVAL);
-	size_t n = strlen(str);
+	ULOG_ERRNO_RETURN_ERR_IF(str[0] == '\0', EINVAL);
+	size_t n = strnlen(str, MAX_SDP_BASE64_LEN);
+	ULOG_ERRNO_RETURN_ERR_IF(n == MAX_SDP_BASE64_LEN, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF((n % 4) != 0, EINVAL);
 
 	size_t padding = 0;
@@ -113,7 +115,7 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 		return -EINVAL;
 	}
 
-	size_t out_len = (n / 4) * 3;
+	size_t out_len = (n / 4) * 3 - padding;
 	uint8_t *_out = calloc(out_len, 1);
 	ULOG_ERRNO_RETURN_ERR_IF(_out == NULL, ENOMEM);
 
@@ -138,7 +140,7 @@ int sdp_base64_decode(const char *str, void **out, size_t *out_size)
 			goto error;
 		acc = (acc << 6) | value;
 		if (((i + 1) % 4) == 0) {
-			_out[j++] = (acc >> 16);
+			_out[j++] = (uint8_t)(acc >> 16);
 			if (j < out_len)
 				_out[j++] = (acc >> 8) & 0xff;
 			if (j < out_len)

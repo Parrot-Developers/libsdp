@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "sdp.h"
+#include "sdp_priv.h"
 
 
 ULOG_DECLARE_TAG(sdp);
@@ -66,6 +66,43 @@ static int sdp_media_type_from_str(const char *str, enum sdp_media_type *type)
 		return 0;
 	} else if (strcmp(str, "message") == 0) {
 		*type = SDP_MEDIA_TYPE_MESSAGE;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+
+const char *sdp_media_rtp_profile_str(enum sdp_media_rtp_profile val)
+{
+	switch (val) {
+	case SDP_MEDIA_RTP_PROFILE_AVP:
+		return SDP_PROTO_RTPAVP;
+	case SDP_MEDIA_RTP_PROFILE_SAVP:
+		return SDP_PROTO_RTPSAVP;
+	case SDP_MEDIA_RTP_PROFILE_AVPF:
+		return SDP_PROTO_RTPAVPF;
+	case SDP_MEDIA_RTP_PROFILE_SAVPF:
+		return SDP_PROTO_RTPSAVPF;
+	default:
+		return "unknown";
+	}
+}
+
+
+static int sdp_media_rtp_profile_from_str(const char *str,
+					  enum sdp_media_rtp_profile *profile)
+{
+	if (strcmp(str, SDP_PROTO_RTPAVP) == 0) {
+		*profile = SDP_MEDIA_RTP_PROFILE_AVP;
+		return 0;
+	} else if (strcmp(str, SDP_PROTO_RTPSAVP) == 0) {
+		*profile = SDP_MEDIA_RTP_PROFILE_SAVP;
+		return 0;
+	} else if (strcmp(str, SDP_PROTO_RTPAVPF) == 0) {
+		*profile = SDP_MEDIA_RTP_PROFILE_AVPF;
+		return 0;
+	} else if (strcmp(str, SDP_PROTO_RTPSAVPF) == 0) {
+		*profile = SDP_MEDIA_RTP_PROFILE_SAVPF;
 		return 0;
 	}
 	return -EINVAL;
@@ -115,8 +152,8 @@ const char *sdp_time_format_str(enum sdp_time_format val)
 		return "SMPTE";
 	case SDP_TIME_FORMAT_ABSOLUTE:
 		return "ABSOLUTE";
-	default:
 	case SDP_TIME_FORMAT_UNKNOWN:
+	default:
 		return "UNKNOWN";
 	}
 }
@@ -135,8 +172,10 @@ struct sdp_session *sdp_session_new(void)
 
 int sdp_session_destroy(struct sdp_session *session)
 {
-	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
-	struct sdp_media *media = NULL, *tmp_media = NULL;
+	struct sdp_attr *attr = NULL;
+	struct sdp_attr *tmp_attr = NULL;
+	struct sdp_media *media = NULL;
+	struct sdp_media *tmp_media = NULL;
 
 	if (session == NULL)
 		return 0;
@@ -172,8 +211,10 @@ int sdp_session_destroy(struct sdp_session *session)
 
 int sdp_session_copy(const struct sdp_session *src, struct sdp_session *dst)
 {
-	struct sdp_attr *attr, *_attr = NULL;
-	struct sdp_media *media, *_media = NULL;
+	struct sdp_attr *attr;
+	const struct sdp_attr *_attr = NULL;
+	struct sdp_media *media;
+	const struct sdp_media *_media = NULL;
 	int err;
 
 	ULOG_ERRNO_RETURN_ERR_IF(src == NULL, EINVAL);
@@ -227,8 +268,8 @@ int sdp_session_compare(const struct sdp_session *a,
 			const struct sdp_session *b)
 {
 	int url_match = 0;
-	struct sdp_media *a_media = NULL;
-	struct sdp_media *b_media = NULL;
+	const struct sdp_media *a_media = NULL;
+	const struct sdp_media *b_media = NULL;
 
 	if (a == NULL && b == NULL) {
 		/* 2 NULL input SDP are considered identical */
@@ -308,7 +349,8 @@ struct sdp_media *sdp_media_new(void)
 
 int sdp_media_destroy(struct sdp_media *media)
 {
-	struct sdp_attr *attr = NULL, *tmp_attr = NULL;
+	struct sdp_attr *attr = NULL;
+	struct sdp_attr *tmp_attr = NULL;
 
 	if (media == NULL)
 		return 0;
@@ -336,7 +378,8 @@ int sdp_media_destroy(struct sdp_media *media)
 
 int sdp_media_copy(const struct sdp_media *src, struct sdp_media *dst)
 {
-	struct sdp_attr *attr, *_attr = NULL;
+	struct sdp_attr *attr;
+	const struct sdp_attr *_attr = NULL;
 	int err;
 
 	ULOG_ERRNO_RETURN_ERR_IF(src == NULL, EINVAL);
@@ -467,8 +510,9 @@ int sdp_session_attr_add_existing(struct sdp_session *session,
 
 int sdp_session_attr_remove(struct sdp_session *session, struct sdp_attr *attr)
 {
-	int err, found = 0;
-	struct sdp_attr *_attr = NULL;
+	int err;
+	int found = 0;
+	const struct sdp_attr *_attr = NULL;
 
 	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
@@ -536,8 +580,9 @@ int sdp_session_media_add_existing(struct sdp_session *session,
 int sdp_session_media_remove(struct sdp_session *session,
 			     struct sdp_media *media)
 {
-	int err, found = 0;
-	struct sdp_media *_media = NULL;
+	int err;
+	int found = 0;
+	const struct sdp_media *_media = NULL;
 
 	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
@@ -602,8 +647,9 @@ int sdp_media_attr_add_existing(struct sdp_media *media, struct sdp_attr *attr)
 
 int sdp_media_attr_remove(struct sdp_media *media, struct sdp_attr *attr)
 {
-	int err, found = 0;
-	struct sdp_attr *_attr = NULL;
+	int err;
+	int found = 0;
+	const struct sdp_attr *_attr = NULL;
 
 	ULOG_ERRNO_RETURN_ERR_IF(media == NULL, EINVAL);
 	ULOG_ERRNO_RETURN_ERR_IF(attr == NULL, EINVAL);
@@ -647,12 +693,13 @@ static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
 				   SDP_TIME_NPT_NOW);
 		} else {
 			ULOG_ERRNO_RETURN_ERR_IF(time->npt.infinity, EINVAL);
-			uint64_t hrs, min;
+			uint64_t hrs;
+			uint64_t min;
 			uint64_t sec = time->npt.sec + time->npt.usec / 1000000;
 			hrs = sec / (60 * 60);
 			min = sec / 60 - hrs * 60;
 			sec = sec - min * 60 - hrs * 60 * 60;
-			float usec = (float)time->npt.usec / 1000000. -
+			float usec = (float)time->npt.usec / 1000000.f -
 				     (time->npt.usec / 1000000);
 			char fraction[6];
 			snprintf(fraction, sizeof(fraction), "%.3f", usec);
@@ -692,7 +739,7 @@ static int sdp_time_write(const struct sdp_time *time, struct sdp_string *sdp)
 }
 
 
-static int sdp_time_read(struct sdp_time *time, char *value)
+static int sdp_time_read(struct sdp_time *time, const char *value)
 {
 	char *s;
 
@@ -701,16 +748,16 @@ static int sdp_time_read(struct sdp_time *time, char *value)
 		s = strchr(value, ':');
 		if (s != NULL) {
 			/* Hours, minutes, seconds */
-			char *hrs_str = value;
+			const char *hrs_str = value;
 			*s = '\0';
-			char *min_str = s + 1;
+			const char *min_str = s + 1;
 			s = strchr(min_str, ':');
 			ULOG_ERRNO_RETURN_ERR_IF(s == NULL, EINVAL);
 			*s = '\0';
-			char *sec_str = s + 1;
+			const char *sec_str = s + 1;
 			unsigned int hrs = atoi(hrs_str);
 			unsigned int min = atoi(min_str);
-			float sec_f = atof(sec_str);
+			float sec_f = (float)atof(sec_str);
 			time->npt.sec = (uint64_t)sec_f;
 			time->npt.sec += min * 60 + hrs * 60 * 60;
 			time->npt.usec = (uint32_t)(
@@ -722,7 +769,7 @@ static int sdp_time_read(struct sdp_time *time, char *value)
 				time->npt.now = 1;
 			} else {
 				/* seconds only */
-				float sec = atof(value);
+				float sec = (float)atof(value);
 				time->npt.sec = (uint64_t)sec;
 				time->npt.usec = (uint32_t)(
 					(sec - (float)time->npt.sec) * 1000000);
@@ -798,7 +845,8 @@ static int sdp_range_attr_read(struct sdp_range *range, char *value)
 {
 	int err;
 	char *s;
-	char *start_str = NULL, *stop_str = NULL;
+	const char *start_str = NULL;
+	const char *stop_str = NULL;
 
 	memset(range, 0, sizeof(*range));
 
@@ -818,17 +866,18 @@ static int sdp_range_attr_read(struct sdp_range *range, char *value)
 		/* Normal Play Time (NPT) */
 		range->start.format = SDP_TIME_FORMAT_NPT;
 		range->stop.format = SDP_TIME_FORMAT_NPT;
-		if (strlen(start_str)) {
+		/* Safety check: ensure string is not empty */
+		if (*start_str != '\0') {
 			err = sdp_time_read(&range->start, start_str);
 			if (err < 0)
-				return -err;
+				return err;
 		} else {
 			range->start.npt.infinity = 1;
 		}
-		if (strlen(stop_str)) {
+		if (*stop_str != '\0') {
 			err = sdp_time_read(&range->stop, stop_str);
 			if (err < 0)
-				return -err;
+				return err;
 		} else {
 			range->stop.npt.infinity = 1;
 		}
@@ -939,7 +988,7 @@ static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 {
 	int ret;
 	char *temp1 = NULL;
-	char *param = NULL;
+	const char *param = NULL;
 	char *val = NULL;
 
 	fmtp->valid = 0;
@@ -950,8 +999,7 @@ static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 			*val = '\0';
 			val++;
 		}
-		if ((strcmp(param, SDP_FMTP_H264_PROFILE_LEVEL) == 0) &&
-		    (val)) {
+		if ((strcmp(param, SDP_FMTP_H264_PROFILE_LEVEL) == 0) && val) {
 			/* profile-level-id */
 			uint32_t profile_level_id = 0;
 			sscanf(val, "%6X", &profile_level_id);
@@ -960,19 +1008,19 @@ static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 			fmtp->level_idc = profile_level_id & 0xFF;
 
 		} else if ((strcmp(param, SDP_FMTP_H264_PACKETIZATION) == 0) &&
-			   (val)) {
+			   val) {
 			/* packetization-mode */
 			fmtp->packetization_mode = atoi(val);
 
 		} else if ((strcmp(param, SDP_FMTP_H264_PARAM_SETS) == 0) &&
-			   (val)) {
+			   val) {
 			/* sprop-parameter-sets */
 			char *p3 = NULL;
 			p3 = strchr(val, ',');
 			if (p3 != NULL) {
 				*p3 = '\0';
-				char *sps_b64 = val;
-				char *pps_b64 = p3 + 1;
+				const char *sps_b64 = val;
+				const char *pps_b64 = p3 + 1;
 				void *sps = NULL;
 				size_t sps_size = 0;
 				void *pps = NULL;
@@ -999,7 +1047,7 @@ static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 		}
 
 		param = strtok_r(NULL, ";", &temp1);
-	};
+	}
 
 	fmtp->valid = 1;
 	return 0;
@@ -1009,7 +1057,8 @@ static int sdp_h264_fmtp_read(struct sdp_h264_fmtp *fmtp, char *value)
 static int sdp_rtcp_xr_attr_write(const struct sdp_rtcp_xr *xr,
 				  struct sdp_string *sdp)
 {
-	int ret, is_first = 1;
+	int ret;
+	int is_first = 1;
 
 	if ((!xr->loss_rle_report) && (!xr->dup_rle_report) &&
 	    (!xr->pkt_receipt_times_report) &&
@@ -1189,7 +1238,6 @@ static int sdp_rtcp_xr_attr_write(const struct sdp_rtcp_xr *xr,
 				   "%s%s",
 				   (is_first2) ? "" : ",",
 				   SDP_ATTR_RTCP_XR_STAT_HL);
-			is_first2 = 0;
 		}
 	}
 
@@ -1214,7 +1262,6 @@ static int sdp_rtcp_xr_attr_write(const struct sdp_rtcp_xr *xr,
 			   "%s%s",
 			   (is_first) ? "" : " ",
 			   SDP_ATTR_RTCP_XR_DJB_METRICS);
-		is_first = 0;
 	}
 
 	CHECK_FUNC(sdp_sprintf, ret, return ret, sdp, SDP_CRLF);
@@ -1227,11 +1274,10 @@ static int sdp_rtcp_xr_attr_write(const struct sdp_rtcp_xr *xr,
 static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 {
 	char *temp1 = NULL;
-	char *xr_format = NULL;
 	char *val = NULL;
 
 	xr->valid = 0;
-	for (xr_format = strtok_r(value, " ", &temp1); xr_format;
+	for (const char *xr_format = strtok_r(value, " ", &temp1); xr_format;
 	     xr_format = strtok_r(NULL, " ", &temp1)) {
 		val = strchr(xr_format, '=');
 		if (val != NULL) {
@@ -1284,7 +1330,7 @@ static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 			if (val == NULL)
 				continue;
 			char *temp2 = NULL;
-			char *stat_flag = NULL;
+			const char *stat_flag = NULL;
 			stat_flag = strtok_r(val, ",", &temp2);
 			while (stat_flag) {
 				if (strcmp(stat_flag,
@@ -1316,7 +1362,7 @@ static int sdp_rtcp_xr_attr_read(struct sdp_rtcp_xr *xr, char *value)
 			/* de-jitter-buffer */
 			xr->djb_metrics_report = 1;
 		}
-	};
+	}
 
 	xr->valid = 1;
 	return 0;
@@ -1332,7 +1378,7 @@ static int sdp_attr_read(struct sdp_session *session,
 	int err;
 	char *temp2 = NULL;
 	struct sdp_attr *attr;
-	char *attr_key = strtok_r(value, ":", &temp2);
+	const char *attr_key = strtok_r(value, ":", &temp2);
 	char *attr_value = strtok_r(NULL, "", &temp2);
 	*out_attr = NULL;
 
@@ -1341,23 +1387,23 @@ static int sdp_attr_read(struct sdp_session *session,
 		return -EPROTO;
 	}
 
-	if ((strcmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP) == 0) && (attr_value)) {
+	if ((strcmp(attr_key, SDP_ATTR_RTPAVP_RTPMAP) == 0) && attr_value) {
 		/* a=rtpmap */
 		if (media == NULL) {
 			ULOGE("attribute 'rtpmap' not on media level");
 			return -EPROTO;
 		}
 		char *temp3 = NULL;
-		char *payload_type = NULL;
+		const char *payload_type = NULL;
 		char *encoding_name = NULL;
-		char *clock_rate = NULL;
+		const char *clock_rate = NULL;
 		char *encoding_params = NULL;
 		payload_type = strtok_r(attr_value, " ", &temp3);
 		unsigned int payload_type_int =
-			(payload_type) ? atoi(payload_type) : 0;
+			payload_type ? atoi(payload_type) : 0;
 		encoding_name = strtok_r(NULL, "/", &temp3);
 		clock_rate = strtok_r(NULL, "/", &temp3);
-		unsigned int i_clock_rate = (clock_rate) ? atoi(clock_rate) : 0;
+		unsigned int i_clock_rate = clock_rate ? atoi(clock_rate) : 0;
 		encoding_params = strtok_r(NULL, "/", &temp3);
 		if (payload_type_int != media->payload_type) {
 			ULOGE("invalid payload type (%d vs. %d)",
@@ -1387,18 +1433,18 @@ static int sdp_attr_read(struct sdp_session *session,
 		      i_clock_rate,
 		      encoding_params);
 
-	} else if ((strcmp(attr_key, SDP_ATTR_FMTP) == 0) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_FMTP) == 0) && attr_value) {
 		/* a=fmtp */
 		if (media == NULL) {
 			ULOGE("attribute 'fmtp' not on media level");
 			return -EPROTO;
 		}
 		char *temp3 = NULL;
-		char *payload_type = NULL;
+		const char *payload_type = NULL;
 		char *fmtp = NULL;
 		payload_type = strtok_r(attr_value, " ", &temp3);
 		unsigned int payload_type_int =
-			(payload_type) ? atoi(payload_type) : 0;
+			payload_type ? atoi(payload_type) : 0;
 
 		if (payload_type_int != media->payload_type) {
 			ULOGE("invalid payload type (%d vs. %d)",
@@ -1443,7 +1489,7 @@ static int sdp_attr_read(struct sdp_session *session,
 			media->control_url = xstrdup(attr_value);
 		else
 			session->control_url = xstrdup(attr_value);
-	} else if ((strcmp(attr_key, SDP_ATTR_RANGE) == 0) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_RANGE) == 0) && attr_value) {
 		/* a=range */
 		if (media)
 			err = sdp_range_attr_read(&media->range, attr_value);
@@ -1480,7 +1526,7 @@ static int sdp_attr_read(struct sdp_session *session,
 		else
 			session->start_mode = SDP_START_MODE_INACTIVE;
 
-	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_XR) == 0) && (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_XR) == 0) && attr_value) {
 		/* a=rtcp-xr */
 		if (media) {
 			err = sdp_rtcp_xr_attr_read(&media->rtcp_xr,
@@ -1492,8 +1538,7 @@ static int sdp_attr_read(struct sdp_session *session,
 		if (err < 0)
 			return err;
 
-	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_PORT) == 0) &&
-		   (attr_value)) {
+	} else if ((strcmp(attr_key, SDP_ATTR_RTCP_PORT) == 0) && attr_value) {
 		/* a=rtcp */
 		if (media == NULL) {
 			ULOGE("attribute 'rtcp' not on media level");
@@ -1697,9 +1742,9 @@ static int sdp_media_read(struct sdp_media *media, char *value)
 {
 	char *temp2 = NULL;
 	char *smedia = strtok_r(value, " ", &temp2);
-	char *port = strtok_r(NULL, " ", &temp2);
+	const char *port = strtok_r(NULL, " ", &temp2);
 	char *proto = strtok_r(NULL, " ", &temp2);
-	char *fmt = strtok_r(NULL, " ", &temp2);
+	const char *fmt = strtok_r(NULL, " ", &temp2);
 	if (smedia) {
 		int res = sdp_media_type_from_str(smedia, &media->type);
 		if (res < 0) {
@@ -1710,18 +1755,25 @@ static int sdp_media_read(struct sdp_media *media, char *value)
 		ULOGE("null media type");
 		return -EPROTO;
 	}
-	int port_int = (port) ? atoi(port) : 0;
+	int port_int = port ? atoi(port) : 0;
 	if (port_int) {
 		media->dst_stream_port = port_int;
 		media->dst_control_port = port_int + 1;
 	} else {
 		media->dst_control_port = 0;
 	}
-	if ((proto == NULL) || (strcmp(proto, SDP_PROTO_RTPAVP) != 0)) {
-		ULOGE("unsupported protocol '%s'", (proto) ? proto : "");
+	if (proto != NULL) {
+		int res = sdp_media_rtp_profile_from_str(proto,
+							 &media->rtp_profile);
+		if (res < 0) {
+			ULOGE("unsupported media rtp profile '%s'", proto);
+			return -EPROTO;
+		}
+	} else {
+		ULOGE("null media rtp profile");
 		return -EPROTO;
 	}
-	media->payload_type = (fmt) ? atoi(fmt) : 0;
+	media->payload_type = fmt ? atoi(fmt) : 0;
 	/* Payload type must be dynamic
 	 * (RFC3551 ch. 6) */
 	if ((media->payload_type < SDP_DYNAMIC_PAYLOAD_TYPE_MIN) ||
@@ -1746,7 +1798,7 @@ int sdp_description_write(const struct sdp_session *session, char **ret_str)
 	int session_level_connection_addr = 0;
 	struct sdp_string sdp;
 	struct sdp_attr *attr = NULL;
-	struct sdp_media *media = NULL;
+	const struct sdp_media *media = NULL;
 
 	ULOG_ERRNO_RETURN_ERR_IF(session == NULL, EINVAL);
 
@@ -2015,7 +2067,10 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 	int ret;
 	char *sdp;
 	struct sdp_media *media = NULL;
-	char *p, type, *value, *temp;
+	char *p;
+	char type;
+	char *value;
+	char *temp;
 	uint32_t mandatory_fields = 0;
 	struct sdp_session *session = NULL;
 
@@ -2036,7 +2091,7 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 	while (p) {
 		/* Each line should be more than 2 chars long and in the form
 		 * "<type>=<value>" with <type> being a single char */
-		if ((strlen(p) <= 2) || (p[1] != '=')) {
+		if ((p[0] == '\0') || (p[1] != '=') || (p[2] == '\0')) {
 			p = strtok_r(NULL, SDP_CRLF, &temp);
 			continue;
 		}
@@ -2067,8 +2122,8 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 			 * <nettype> <addrtype> <unicast-address>) */
 			char *temp2 = NULL;
 			char *username = strtok_r(value, " ", &temp2);
-			char *sess_id = strtok_r(NULL, " ", &temp2);
-			char *sess_version = strtok_r(NULL, " ", &temp2);
+			const char *sess_id = strtok_r(NULL, " ", &temp2);
+			const char *sess_version = strtok_r(NULL, " ", &temp2);
 			char *nettype = strtok_r(NULL, " ", &temp2);
 			if ((!nettype) || (strcmp(nettype, "IN") != 0)) {
 				/* Network type must be 'IN'
@@ -2088,9 +2143,9 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 			}
 			char *unicast_address = strtok_r(NULL, " ", &temp2);
 			session->server_addr = xstrdup(unicast_address);
-			session->session_id = (sess_id) ? atoll(sess_id) : 0;
+			session->session_id = sess_id ? atoll(sess_id) : 0;
 			session->session_version =
-				(sess_version) ? atoll(sess_version) : 0;
+				sess_version ? atoll(sess_version) : 0;
 			ULOGD("SDP: username=%s sess_id=%" PRIu64
 			      " sess_version=%" PRIu64
 			      " nettype=%s"
@@ -2214,14 +2269,14 @@ int sdp_description_read(const char *session_desc, struct sdp_session **ret_obj)
 			mandatory_fields |= SDP_MANDATORY_TYPE_MASK_TIME;
 			/* Time (t=<start-time> <stop-time>) */
 			char *temp2 = NULL;
-			char *start_time = NULL;
+			const char *start_time = NULL;
 			start_time = strtok_r(value, " ", &temp2);
 			uint64_t start_time_int =
-				(start_time) ? atoll(start_time) : 0;
-			char *stop_time = NULL;
+				start_time ? atoll(start_time) : 0;
+			const char *stop_time = NULL;
 			stop_time = strtok_r(NULL, " ", &temp2);
 			uint64_t stop_time_int =
-				(stop_time) ? atoll(stop_time) : 0;
+				stop_time ? atoll(stop_time) : 0;
 			ULOGD("SDP: start_time=%" PRIu64 "stop_time=%" PRIu64,
 			      start_time_int,
 			      stop_time_int);

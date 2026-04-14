@@ -75,6 +75,9 @@
 #define SDP_VERSION 0
 
 #define SDP_PROTO_RTPAVP "RTP/AVP"
+#define SDP_PROTO_RTPSAVP "RTP/SAVP"
+#define SDP_PROTO_RTPAVPF "RTP/AVPF"
+#define SDP_PROTO_RTPSAVPF "RTP/SAVPF"
 
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MIN 96
 #define SDP_DYNAMIC_PAYLOAD_TYPE_MAX 127
@@ -191,9 +194,12 @@ static inline char *xstrdup(const char *s)
 }
 
 
-int sdp_base64_encode(const void *data, size_t size, char **out);
+#define MAX_SDP_BASE64_LEN 4096
 
-int sdp_base64_decode(const char *str, void **out, size_t *out_size);
+
+SDP_API int sdp_base64_encode(const void *data, size_t size, char **out);
+
+SDP_API int sdp_base64_decode(const char *str, void **out, size_t *out_size);
 
 
 #endif /* !_SDP_H_ */

@@ -61,6 +61,29 @@ enum sdp_media_type {
 };
 
 
+enum sdp_media_rtp_profile {
+	/* Audio/Video Profile (AVP)
+	 * Non-secure standard profile, defined in RFC 3551. */
+	SDP_MEDIA_RTP_PROFILE_AVP = 0,
+
+	/* Secure Audio/Video Profile (SAVP)
+	 * Secure profile using SRTP (Secure RTP), defined in RFC 3711.*/
+	SDP_MEDIA_RTP_PROFILE_SAVP,
+
+	/* Audio/Video Profile with Feedback (AVPF)
+	 * Standard profile extended with real-time feedback mechanisms
+	 * (RTCP-FB), defined in RFC 4585. */
+	SDP_MEDIA_RTP_PROFILE_AVPF,
+
+	/* Secure AVPF (SAVPF)
+	 * The most common secure profile, combining SRTP and RTCP-FB (WebRTC
+	 * default), defined in RFC 5124. */
+	SDP_MEDIA_RTP_PROFILE_SAVPF,
+
+	SDP_MEDIA_RTP_PROFILE_MAX,
+};
+
+
 enum sdp_start_mode {
 	SDP_START_MODE_UNSPECIFIED = 0,
 	SDP_START_MODE_RECVONLY,
@@ -174,6 +197,7 @@ struct sdp_rtcp_xr {
 
 struct sdp_media {
 	enum sdp_media_type type;
+	enum sdp_media_rtp_profile rtp_profile;
 	char *media_title;
 	char *connection_addr;
 	int multicast;
@@ -327,6 +351,9 @@ SDP_API const char *sdp_media_type_str(enum sdp_media_type val);
 SDP_API const char *sdp_start_mode_str(enum sdp_start_mode val);
 
 
+SDP_API const char *sdp_media_rtp_profile_str(enum sdp_media_rtp_profile val);
+
+
 SDP_API const char *
 sdp_rtcp_xr_rtt_report_mode_str(enum sdp_rtcp_xr_rtt_report_mode val);
 
@@ -343,7 +370,7 @@ static inline int sdp_time_us_to_npt(uint64_t time_us,
 	time_npt->now = 0;
 	time_npt->infinity = 0;
 	time_npt->sec = time_us / 1000000;
-	time_npt->usec = time_us - time_npt->sec * 1000000;
+	time_npt->usec = (uint32_t)(time_us % 1000000);
 
 	return 0;
 }
